@@ -13,6 +13,8 @@ import Slip from "./pages/Slip";
 import SlipPreview from "./pages/SlipPreview";
 import "./App.css";
 import Profile from "./pages/Profile";
+import Footer from "./components/Footer";
+import AmbulancePrototype from './pages/AmbulancePrototype';
 
 export default function App() {
   return (
@@ -30,7 +32,9 @@ export default function App() {
         <Route path="/appo" element={<AppointmentPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/ambulance" element={<AmbulancePrototype />} />
       </Routes>
+      <Footer />
     </BrowserRouter>
   );
 }

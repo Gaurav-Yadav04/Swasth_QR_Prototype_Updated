@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import api from "../api/api";
-import PatientSlip from "../components/PatientSlip";
 
 const Register = () => {
   const [mode, setMode] = useState("login");
@@ -21,7 +20,6 @@ const Register = () => {
     adhar_no: "",
   });
 
-  const [qrCode, setQrCode] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -44,12 +42,16 @@ const Register = () => {
     localStorage.setItem("swasth_patient_token", token);
     localStorage.setItem("token", token);
     localStorage.setItem("swasth_patient_id", patientData._id);
+
     localStorage.setItem(
       "swasth_patient_profile",
       JSON.stringify(patientData)
     );
   };
 
+  // ============================
+  // REGISTER PATIENT
+  // ============================
   const handleRegister = async (e) => {
     e.preventDefault();
 
@@ -58,21 +60,20 @@ const Register = () => {
     setSuccess("");
 
     try {
-      const res = await api.post(
-        "/patients/register",
-        patient
-      );
+      const res = await api.post("/patients/register", patient);
 
       const registeredPatient = res.data.patient;
       const token = res.data.token;
 
+      // Save login session
       savePatientSession(registeredPatient, token);
 
-      setQrCode(registeredPatient.qrCode);
+      setSuccess("Registration successful. Redirecting...");
 
-      setSuccess(
-        "Registration successful. You are now logged in."
-      );
+      // Redirect to Home page
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
     } catch (err) {
       console.error(err);
 
@@ -85,6 +86,9 @@ const Register = () => {
     }
   };
 
+  // ============================
+  // LOGIN PATIENT
+  // ============================
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -101,10 +105,12 @@ const Register = () => {
       const loggedInPatient = res.data.patient;
       const token = res.data.token;
 
+      // Save login session
       savePatientSession(loggedInPatient, token);
 
       setSuccess("Login successful.");
 
+      // Redirect to Profile page
       setTimeout(() => {
         window.location.href = "/profile";
       }, 700);
@@ -124,16 +130,15 @@ const Register = () => {
     setMode(newMode);
     setError("");
     setSuccess("");
-    setQrCode(null);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-8">
-      <div className="mx-auto flex max-w-5xl flex-col items-start justify-center gap-6 lg:flex-row">
+      <div className="mx-auto flex w-full max-w-md items-center justify-center">
+        <div className="w-full">
+          <div className="rounded-2xl bg-white p-6 shadow-lg sm:p-7">
 
-        <div className="w-full max-w-md">
-          <div className="rounded-2xl bg-white p-6 shadow-lg">
-
+            {/* Header */}
             <div className="mb-6 text-center">
               <h1 className="text-2xl font-bold text-gray-900">
                 Swasth QR
@@ -144,6 +149,7 @@ const Register = () => {
               </p>
             </div>
 
+            {/* Login / Register Toggle */}
             <div className="mb-6 flex rounded-xl bg-gray-100 p-1">
               <button
                 type="button"
@@ -151,7 +157,7 @@ const Register = () => {
                 className={`w-1/2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
                   mode === "login"
                     ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-500"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 Login
@@ -163,25 +169,30 @@ const Register = () => {
                 className={`w-1/2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
                   mode === "register"
                     ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-500"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 Register
               </button>
             </div>
 
+            {/* Error */}
             {error && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
                 {error}
               </div>
             )}
 
+            {/* Success */}
             {success && (
               <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-600">
                 {success}
               </div>
             )}
 
+            {/* ============================
+                LOGIN FORM
+            ============================ */}
             {mode === "login" ? (
               <form
                 onSubmit={handleLogin}
@@ -198,7 +209,7 @@ const Register = () => {
                     value={loginData.name}
                     onChange={handleLoginChange}
                     placeholder="Enter your name"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     required
                   />
                 </div>
@@ -215,7 +226,8 @@ const Register = () => {
                     onChange={handleLoginChange}
                     placeholder="Enter Aadhaar number"
                     maxLength="12"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    inputMode="numeric"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     required
                   />
                 </div>
@@ -223,7 +235,7 @@ const Register = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-lg bg-blue-600 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:bg-blue-300"
+                  className="w-full rounded-lg bg-blue-600 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                 >
                   {loading ? "Logging in..." : "Login"}
                 </button>
@@ -240,6 +252,9 @@ const Register = () => {
                 </p>
               </form>
             ) : (
+              /* ============================
+                 REGISTER FORM
+              ============================ */
               <form
                 onSubmit={handleRegister}
                 className="space-y-4"
@@ -252,8 +267,8 @@ const Register = () => {
                   name="name"
                   placeholder="Name"
                   value={patient.name}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-blue-500"
                   onChange={handlePatientChange}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   required
                 />
 
@@ -261,8 +276,8 @@ const Register = () => {
                   name="fatherName"
                   placeholder="Father Name"
                   value={patient.fatherName}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-blue-500"
                   onChange={handlePatientChange}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   required
                 />
 
@@ -270,9 +285,10 @@ const Register = () => {
                   name="adhar_no"
                   placeholder="Aadhaar No."
                   value={patient.adhar_no}
-                  maxLength="12"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-blue-500"
                   onChange={handlePatientChange}
+                  maxLength="12"
+                  inputMode="numeric"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   required
                 />
 
@@ -281,8 +297,10 @@ const Register = () => {
                   type="number"
                   placeholder="Age"
                   value={patient.age}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-blue-500"
                   onChange={handlePatientChange}
+                  min="1"
+                  max="120"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   required
                 />
 
@@ -290,8 +308,8 @@ const Register = () => {
                   name="gender"
                   placeholder="Gender"
                   value={patient.gender}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-blue-500"
                   onChange={handlePatientChange}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   required
                 />
 
@@ -299,8 +317,9 @@ const Register = () => {
                   name="phone"
                   placeholder="Phone"
                   value={patient.phone}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-blue-500"
                   onChange={handlePatientChange}
+                  inputMode="numeric"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   required
                 />
 
@@ -308,19 +327,19 @@ const Register = () => {
                   name="address"
                   placeholder="Address"
                   value={patient.address}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-blue-500"
                   onChange={handlePatientChange}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   required
                 />
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-lg bg-blue-600 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:bg-blue-300"
+                  className="w-full rounded-lg bg-blue-600 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                 >
                   {loading
                     ? "Registering..."
-                    : "Register & Generate QR"}
+                    : "Register"}
                 </button>
 
                 <p className="text-center text-sm text-gray-500">
@@ -337,20 +356,9 @@ const Register = () => {
             )}
           </div>
         </div>
-
-        {qrCode && (
-          <div className="w-full max-w-md">
-            <PatientSlip
-              patient={patient}
-              qrCodeUrl={qrCode}
-              hospitalName="--"
-            />
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
-export default Register;
-
+export default Register; 

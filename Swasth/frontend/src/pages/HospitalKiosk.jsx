@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/api";
 
@@ -12,34 +13,115 @@ import {
 
 import QrReader from "../components/QrReader";
 
-const departments = [
-  "General Medicine",
-  "Orthopedic",
-  "Pediatrics",
-  "Cardiology",
-  "Neurology",
-];
-
 export default function HospitalKiosk() {
   const [step, setStep] = useState(1);
 
-  // Patient verification
-  const [verificationMode, setVerificationMode] = useState(null);
+  // =====================================================
+  // HOSPITAL
+  // =====================================================
+
+  const [hospitalName] = useState(
+    localStorage.getItem("hospitalName") ||
+      "Swasth QR Hospital"
+  );
+
+  // =====================================================
+  // PATIENT VERIFICATION
+  // =====================================================
+
+  const [verificationMode, setVerificationMode] =
+    useState(null);
+
   const [scanning, setScanning] = useState(false);
+
   const [patient, setPatient] = useState(null);
+
   const [aadhaar, setAadhaar] = useState("");
+
   const [scanError, setScanError] = useState("");
+
   const [searching, setSearching] = useState(false);
 
-  // Appointment
+  // =====================================================
+  // APPOINTMENT
+  // =====================================================
+
   const [department, setDepartment] = useState("");
+
   const [problem, setProblem] = useState("");
+
   const [doctor, setDoctor] = useState(null);
+
   const [result, setResult] = useState(null);
 
-  /* =====================================================
-     QR SCAN START
-  ===================================================== */
+  // =====================================================
+  // HOSPITAL DEPARTMENTS
+  // =====================================================
+  //
+  // Only departments available in the current hospital
+  // will be shown.
+  //
+  // DEMO_DOCTORS example:
+  //
+  // hospitalName: "District Hospital Ayodhya"
+  // specialization: "General Medicine"
+  //
+  // hospitalName: "Government Medical Centre Lucknow"
+  // specialization: "Cardiology"
+  //
+  // =====================================================
+
+  const hospitalDoctors = useMemo(() => {
+    const currentHospital =
+      hospitalName?.trim().toLowerCase();
+
+    if (!currentHospital) {
+      return DEMO_DOCTORS;
+    }
+
+    const filtered = DEMO_DOCTORS.filter((doctor) => {
+      const doctorHospital =
+        doctor.hospitalName ||
+        doctor.hospital?.name ||
+        "";
+
+      return (
+        doctorHospital.trim().toLowerCase() ===
+        currentHospital
+      );
+    });
+
+    /*
+     * Agar current hospital ke naam se koi demo doctor
+     * nahi mila, to saare demo doctors use karenge.
+     * Isse kiosk blank nahi hoga.
+     */
+    return filtered.length > 0
+      ? filtered
+      : DEMO_DOCTORS;
+  }, [hospitalName]);
+
+  // =====================================================
+  // DEPARTMENTS FOR CURRENT HOSPITAL
+  // =====================================================
+
+  const departments = useMemo(() => {
+    return [
+      ...new Set(
+        hospitalDoctors
+          .map(
+            (doctor) =>
+              doctor.specialization ||
+              doctor.department
+          )
+          .filter(Boolean)
+      ),
+    ];
+  }, [hospitalDoctors]);
+
+  // =====================================================
+  // QR SCAN START
+  // =====================================================
 
   const startQRScan = () => {
     setVerificationMode("qr");
@@ -48,17 +130,17 @@ export default function HospitalKiosk() {
     setPatient(null);
   };
 
-  /* =====================================================
-     QR SCAN ERROR
-  ===================================================== */
+  // =====================================================
+  // QR SCAN ERROR
+  // =====================================================
 
   const handleScanError = (error) => {
     console.error("QR Scanner Error:", error);
   };
 
-  /* =====================================================
-     QR SCAN SUCCESS
-  ===================================================== */
+  // =====================================================
+  // QR SCAN SUCCESS
+  // =====================================================
 
   const handleScan = async (data) => {
     if (!data || patient || searching) {
@@ -74,25 +156,31 @@ export default function HospitalKiosk() {
       /*
        * Patient profile ka QR normally patient _id
        * contain karega.
-       *
-       * Example:
-       * 65f123abc456789...
        */
 
-      const res = await api.get(`/patients/${qrValue}`);
+      const res = await api.get(
+        `/patients/${qrValue}`
+      );
 
       if (!res.data) {
         throw new Error("Patient not found");
       }
 
       setPatient(res.data);
+
       setScanning(false);
+
       setVerificationMode("verified");
+
       setStep(2);
     } catch (error) {
-      console.error("Patient QR fetch error:", error);
+      console.error(
+        "Patient QR fetch error:",
+        error
+      );
 
       setPatient(null);
+
       setScanning(false);
 
       setScanError(
@@ -104,13 +192,15 @@ export default function HospitalKiosk() {
     }
   };
 
-  /* =====================================================
-     AADHAAR SEARCH
-  ===================================================== */
+  // =====================================================
+  // AADHAAR SEARCH
+  // =====================================================
 
   const handleAadhaarSearch = async () => {
     if (!aadhaar.trim()) {
-      setScanError("Please enter Aadhaar number.");
+      setScanError(
+        "Please enter Aadhaar number."
+      );
       return;
     }
 
@@ -127,11 +217,17 @@ export default function HospitalKiosk() {
       }
 
       setPatient(res.data);
+
       setVerificationMode("verified");
+
       setScanning(false);
+
       setStep(2);
     } catch (error) {
-      console.error("Aadhaar patient search error:", error);
+      console.error(
+        "Aadhaar patient search error:",
+        error
+      );
 
       setPatient(null);
 
@@ -144,18 +240,25 @@ export default function HospitalKiosk() {
     }
   };
 
-  /* =====================================================
-     FIND DOCTOR
-  ===================================================== */
+  // =====================================================
+  // FIND DOCTOR
+  // =====================================================
 
   const findDoctor = () => {
     if (!department) {
       return;
     }
 
-    const available = DEMO_DOCTORS.filter(
+    /*
+     * IMPORTANT:
+     *
+     * Doctors are filtered from the CURRENT HOSPITAL only.
+     */
+
+    const available = hospitalDoctors.filter(
       (d) =>
-        d.specialization === department &&
+        (d.specialization === department ||
+          d.department === department) &&
         d.active
     );
 
@@ -165,25 +268,27 @@ export default function HospitalKiosk() {
           (a.queueCount || 0) -
           (b.queueCount || 0)
       )[0] ||
-      DEMO_DOCTORS.find(
+      hospitalDoctors.find(
         (d) =>
-          d.specialization === department
+          d.specialization === department ||
+          d.department === department
       );
 
     if (!selected) {
       alert(
-        `No doctor found for ${department}.`
+        `No doctor found for ${department} at ${hospitalName}.`
       );
       return;
     }
 
     setDoctor(selected);
+
     setStep(3);
   };
 
-  /* =====================================================
-     GENERATE TOKEN
-  ===================================================== */
+  // =====================================================
+  // GENERATE TOKEN
+  // =====================================================
 
   const generateToken = () => {
     if (!doctor || !patient) {
@@ -205,9 +310,7 @@ export default function HospitalKiosk() {
 
       hospitalName:
         doctor.hospitalName ||
-        localStorage.getItem(
-          "hospitalName"
-        ) ||
+        hospitalName ||
         "Swasth QR Hospital",
 
       room:
@@ -258,10 +361,14 @@ export default function HospitalKiosk() {
       ...getQueue(),
       {
         id: appointment.id,
+
         token,
+
         patient:
           patient?.name || "Patient",
+
         doctorId: doctor.id,
+
         status: "waiting",
       },
     ]);
@@ -271,9 +378,9 @@ export default function HospitalKiosk() {
     setStep(4);
   };
 
-  /* =====================================================
-     PRINT SLIP
-  ===================================================== */
+  // =====================================================
+  // PRINT SLIP
+  // =====================================================
 
   const printSlip = () => {
     if (!result) {
@@ -297,9 +404,11 @@ export default function HospitalKiosk() {
       <!DOCTYPE html>
       <html>
       <head>
+
         <title>Swasth QR Hospital Slip</title>
 
         <style>
+
           * {
             box-sizing: border-box;
           }
@@ -400,6 +509,7 @@ export default function HospitalKiosk() {
           }
 
           @media print {
+
             body {
               padding: 0;
             }
@@ -407,8 +517,11 @@ export default function HospitalKiosk() {
             .slip {
               border: 1px solid #999;
             }
+
           }
+
         </style>
+
       </head>
 
       <body>
@@ -416,23 +529,31 @@ export default function HospitalKiosk() {
         <div class="slip">
 
           <div class="header">
+
             <div class="hospital">
-              ${escapeHTML(result.hospitalName)}
+              ${escapeHTML(
+                result.hospitalName
+              )}
             </div>
 
             <div class="title">
               SWASTH QR APPOINTMENT SLIP
             </div>
+
           </div>
 
           <div class="token-box">
+
             <div class="token-label">
               TOKEN NUMBER
             </div>
 
             <div class="token">
-              #${escapeHTML(String(result.token))}
+              #${escapeHTML(
+                String(result.token)
+              )}
             </div>
+
           </div>
 
           <div class="section">
@@ -447,7 +568,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.patientName)}
+                ${escapeHTML(
+                  result.patientName
+                )}
               </span>
             </div>
 
@@ -470,7 +593,9 @@ export default function HospitalKiosk() {
 
               <span class="value">
                 ${escapeHTML(
-                  String(result.patientAge || "-")
+                  String(
+                    result.patientAge || "-"
+                  )
                 )}
               </span>
             </div>
@@ -513,7 +638,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.department)}
+                ${escapeHTML(
+                  result.department
+                )}
               </span>
             </div>
 
@@ -523,7 +650,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.doctorName)}
+                ${escapeHTML(
+                  result.doctorName
+                )}
               </span>
             </div>
 
@@ -533,7 +662,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.room || "-")}
+                ${escapeHTML(
+                  result.room || "-"
+                )}
               </span>
             </div>
 
@@ -544,7 +675,8 @@ export default function HospitalKiosk() {
 
               <span class="value">
                 ${escapeHTML(
-                  result.problem || "Not specified"
+                  result.problem ||
+                    "Not specified"
                 )}
               </span>
             </div>
@@ -555,7 +687,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.date)}
+                ${escapeHTML(
+                  result.date
+                )}
               </span>
             </div>
 
@@ -565,7 +699,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.time)}
+                ${escapeHTML(
+                  result.time
+                )}
               </span>
             </div>
 
@@ -582,18 +718,24 @@ export default function HospitalKiosk() {
           </div>
 
           <div class="footer">
+
             Please keep this slip for your
             appointment and queue tracking.
+
             <br />
+
             Generated by Swasth QR
+
           </div>
 
         </div>
 
         <script>
+
           window.onload = function () {
             window.print();
           };
+
         </script>
 
       </body>
@@ -601,14 +743,17 @@ export default function HospitalKiosk() {
     `;
 
     printWindow.document.open();
-    printWindow.document.write(slipHTML);
+
+    printWindow.document.write(
+      slipHTML
+    );
+
     printWindow.document.close();
   };
 
-  /* =====================================================
-     DOWNLOAD SLIP
-     Downloads a standalone HTML slip.
-  ===================================================== */
+  // =====================================================
+  // DOWNLOAD SLIP
+  // =====================================================
 
   const downloadSlip = () => {
     if (!result) {
@@ -618,12 +763,14 @@ export default function HospitalKiosk() {
     const html = `
       <!DOCTYPE html>
       <html>
+
       <head>
 
         <meta charset="UTF-8" />
 
         <title>
-          Swasth QR Slip - ${escapeHTML(
+          Swasth QR Slip -
+          ${escapeHTML(
             String(result.token)
           )}
         </title>
@@ -739,7 +886,9 @@ export default function HospitalKiosk() {
           <div class="header">
 
             <div class="hospital">
-              ${escapeHTML(result.hospitalName)}
+              ${escapeHTML(
+                result.hospitalName
+              )}
             </div>
 
             <div class="title">
@@ -769,14 +918,22 @@ export default function HospitalKiosk() {
             </div>
 
             <div class="row">
-              <span class="label">Name</span>
+              <span class="label">
+                Name
+              </span>
+
               <span class="value">
-                ${escapeHTML(result.patientName)}
+                ${escapeHTML(
+                  result.patientName
+                )}
               </span>
             </div>
 
             <div class="row">
-              <span class="label">Aadhaar</span>
+              <span class="label">
+                Aadhaar
+              </span>
+
               <span class="value">
                 ${escapeHTML(
                   result.patientAadhaar || "-"
@@ -785,16 +942,24 @@ export default function HospitalKiosk() {
             </div>
 
             <div class="row">
-              <span class="label">Age</span>
+              <span class="label">
+                Age
+              </span>
+
               <span class="value">
                 ${escapeHTML(
-                  String(result.patientAge || "-")
+                  String(
+                    result.patientAge || "-"
+                  )
                 )}
               </span>
             </div>
 
             <div class="row">
-              <span class="label">Gender</span>
+              <span class="label">
+                Gender
+              </span>
+
               <span class="value">
                 ${escapeHTML(
                   result.patientGender || "-"
@@ -816,7 +981,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.department)}
+                ${escapeHTML(
+                  result.department
+                )}
               </span>
             </div>
 
@@ -826,7 +993,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.doctorName)}
+                ${escapeHTML(
+                  result.doctorName
+                )}
               </span>
             </div>
 
@@ -836,7 +1005,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.room || "-")}
+                ${escapeHTML(
+                  result.room || "-"
+                )}
               </span>
             </div>
 
@@ -847,7 +1018,8 @@ export default function HospitalKiosk() {
 
               <span class="value">
                 ${escapeHTML(
-                  result.problem || "Not specified"
+                  result.problem ||
+                    "Not specified"
                 )}
               </span>
             </div>
@@ -858,7 +1030,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.date)}
+                ${escapeHTML(
+                  result.date
+                )}
               </span>
             </div>
 
@@ -868,7 +1042,9 @@ export default function HospitalKiosk() {
               </span>
 
               <span class="value">
-                ${escapeHTML(result.time)}
+                ${escapeHTML(
+                  result.time
+                )}
               </span>
             </div>
 
@@ -885,14 +1061,19 @@ export default function HospitalKiosk() {
           </div>
 
           <div class="footer">
+
             Generated by Swasth QR
+
             <br />
+
             Please keep this slip for queue tracking.
+
           </div>
 
         </div>
 
       </body>
+
       </html>
     `;
 
@@ -923,9 +1104,9 @@ export default function HospitalKiosk() {
     URL.revokeObjectURL(url);
   };
 
-  /* =====================================================
-     ESCAPE HTML
-  ===================================================== */
+  // =====================================================
+  // ESCAPE HTML
+  // =====================================================
 
   function escapeHTML(value) {
     return String(value ?? "")
@@ -936,30 +1117,37 @@ export default function HospitalKiosk() {
       .replace(/'/g, "&#039;");
   }
 
-  /* =====================================================
-     RESET KIOSK
-  ===================================================== */
+  // =====================================================
+  // RESET KIOSK
+  // =====================================================
 
   const resetKiosk = () => {
     setStep(1);
 
     setVerificationMode(null);
+
     setScanning(false);
 
     setPatient(null);
+
     setAadhaar("");
+
     setScanError("");
+
     setSearching(false);
 
     setDepartment("");
+
     setProblem("");
+
     setDoctor(null);
+
     setResult(null);
   };
 
-  /* =====================================================
-     RENDER
-  ===================================================== */
+  // =====================================================
+  // RENDER
+  // =====================================================
 
   return (
     <main className="page">
@@ -987,6 +1175,15 @@ export default function HospitalKiosk() {
               Swasth QR Kiosk
             </h1>
 
+            <p
+              className="muted small"
+              style={{
+                marginTop: 4,
+              }}
+            >
+              {hospitalName}
+            </p>
+
           </div>
 
           <Link
@@ -1002,7 +1199,6 @@ export default function HospitalKiosk() {
 
           {/* =================================================
               STEP 1
-              QR + AADHAAR VERIFICATION
           ================================================= */}
 
           {step === 1 && (
@@ -1026,9 +1222,7 @@ export default function HospitalKiosk() {
                 their Swasth QR or Aadhaar.
               </p>
 
-              {/* =============================================
-                  VERIFICATION OPTIONS
-              ============================================= */}
+              {/* VERIFICATION OPTIONS */}
 
               {!verificationMode && (
 
@@ -1071,6 +1265,7 @@ export default function HospitalKiosk() {
                           setVerificationMode(
                             "aadhaar"
                           );
+
                           setScanError("");
                         }}
                       >
@@ -1096,9 +1291,7 @@ export default function HospitalKiosk() {
 
               )}
 
-              {/* =============================================
-                  CAMERA QR SCANNER
-              ============================================= */}
+              {/* CAMERA QR SCANNER */}
 
               {verificationMode === "qr" && (
 
@@ -1109,18 +1302,19 @@ export default function HospitalKiosk() {
                   }}
                 >
 
-                  {!scanning && !patient && (
+                  {!scanning &&
+                    !patient && (
 
-                    <button
-                      className="btn btn-primary"
-                      onClick={
-                        startQRScan
-                      }
-                    >
-                      📷 Start Camera Scanner
-                    </button>
+                      <button
+                        className="btn btn-primary"
+                        onClick={
+                          startQRScan
+                        }
+                      >
+                        📷 Start Camera Scanner
+                      </button>
 
-                  )}
+                    )}
 
                   {scanning && (
 
@@ -1153,9 +1347,8 @@ export default function HospitalKiosk() {
                       <button
                         className="btn btn-outline"
                         onClick={() => {
-                          setScanning(
-                            false
-                          );
+                          setScanning(false);
+
                           setVerificationMode(
                             null
                           );
@@ -1172,9 +1365,7 @@ export default function HospitalKiosk() {
 
               )}
 
-              {/* =============================================
-                  AADHAAR SEARCH
-              ============================================= */}
+              {/* AADHAAR SEARCH */}
 
               {verificationMode ===
                 "aadhaar" && (
@@ -1182,8 +1373,7 @@ export default function HospitalKiosk() {
                 <div
                   style={{
                     maxWidth: 450,
-                    margin:
-                      "25px auto",
+                    margin: "25px auto",
                   }}
                 >
 
@@ -1196,6 +1386,7 @@ export default function HospitalKiosk() {
                   >
 
                     <label className="label">
+
                       Aadhaar Number
 
                       <input
@@ -1239,7 +1430,9 @@ export default function HospitalKiosk() {
                         setVerificationMode(
                           null
                         );
+
                         setAadhaar("");
+
                         setScanError("");
                       }}
                     >
@@ -1252,9 +1445,7 @@ export default function HospitalKiosk() {
 
               )}
 
-              {/* =============================================
-                  ERROR
-              ============================================= */}
+              {/* ERROR */}
 
               {scanError && (
 
@@ -1276,6 +1467,7 @@ export default function HospitalKiosk() {
                     }}
                     onClick={() => {
                       setScanError("");
+
                       setPatient(null);
 
                       if (
@@ -1299,7 +1491,6 @@ export default function HospitalKiosk() {
 
           {/* =================================================
               STEP 2
-              PATIENT + DEPARTMENT
           ================================================= */}
 
           {step === 2 && patient && (
@@ -1314,9 +1505,7 @@ export default function HospitalKiosk() {
                 Select Your Visit
               </h2>
 
-              {/* =============================================
-                  PATIENT CARD
-              ============================================= */}
+              {/* PATIENT CARD */}
 
               <div
                 className="card"
@@ -1344,8 +1533,7 @@ export default function HospitalKiosk() {
                       {patient.age || "-"}
                       {" · "}
                       Gender:{" "}
-                      {patient.gender ||
-                        "-"}
+                      {patient.gender || "-"}
                     </p>
 
                   </div>
@@ -1364,23 +1552,30 @@ export default function HospitalKiosk() {
 
               </div>
 
-              {/* =============================================
-                  VISIT FORM
-              ============================================= */}
+              {/* VISIT FORM */}
 
               <div className="form-grid">
 
+                {/* DEPARTMENT */}
+
                 <label className="label">
+
                   Department
 
                   <select
                     className="select"
                     value={department}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setDepartment(
                         e.target.value
-                      )
-                    }
+                      );
+
+                      /*
+                       * Department change hone par
+                       * previous selected doctor hata denge.
+                       */
+                      setDoctor(null);
+                    }}
                   >
 
                     <option value="">
@@ -1400,9 +1595,27 @@ export default function HospitalKiosk() {
 
                   </select>
 
+                  {/* CURRENT HOSPITAL INFO */}
+
+                  <span
+                    className="muted small"
+                    style={{
+                      display: "block",
+                      marginTop: 6,
+                    }}
+                  >
+                    Departments available at{" "}
+                    <b>
+                      {hospitalName}
+                    </b>
+                  </span>
+
                 </label>
 
+                {/* PROBLEM */}
+
                 <label className="label">
+
                   What is your problem?
 
                   <input
@@ -1441,7 +1654,6 @@ export default function HospitalKiosk() {
 
           {/* =================================================
               STEP 3
-              DOCTOR
           ================================================= */}
 
           {step === 3 && doctor && (
@@ -1510,6 +1722,14 @@ export default function HospitalKiosk() {
                 >
 
                   <p className="small muted">
+                    Hospital:{" "}
+                    <b>
+                      {doctor.hospitalName ||
+                        hospitalName}
+                    </b>
+                  </p>
+
+                  <p className="small muted">
                     Patient:{" "}
                     <b>
                       {patient.name}
@@ -1570,7 +1790,6 @@ export default function HospitalKiosk() {
 
           {/* =================================================
               STEP 4
-              TOKEN + SLIP
           ================================================= */}
 
           {step === 4 && result && (
@@ -1589,15 +1808,12 @@ export default function HospitalKiosk() {
                 Appointment Confirmed
               </h2>
 
-              {/* =============================================
-                  TOKEN
-              ============================================= */}
-
               <div className="token">
                 #{result.token}
               </div>
 
               <p>
+
                 <b>
                   {result.patientName}
                 </b>
@@ -1614,6 +1830,7 @@ export default function HospitalKiosk() {
                 {result.room || "-"}
                 {" · "}
                 {result.department}
+
               </p>
 
               <div className="alert">
@@ -1622,28 +1839,22 @@ export default function HospitalKiosk() {
                 screen.
               </div>
 
-              {/* =============================================
-                  SLIP PREVIEW
-              ============================================= */}
+              {/* SLIP PREVIEW */}
 
               <div
                 className="card"
                 style={{
                   maxWidth: 420,
-                  margin:
-                    "20px auto",
-                  textAlign:
-                    "left",
-                  boxShadow:
-                    "none",
+                  margin: "20px auto",
+                  textAlign: "left",
+                  boxShadow: "none",
                   padding: 20,
                 }}
               >
 
                 <div
                   style={{
-                    textAlign:
-                      "center",
+                    textAlign: "center",
                     borderBottom:
                       "1px solid #e5e7eb",
                     paddingBottom: 12,
@@ -1673,15 +1884,11 @@ export default function HospitalKiosk() {
 
                 <div
                   style={{
-                    textAlign:
-                      "center",
+                    textAlign: "center",
                     padding: 14,
-                    background:
-                      "#eff6ff",
-                    borderRadius:
-                      10,
-                    marginBottom:
-                      14,
+                    background: "#eff6ff",
+                    borderRadius: 10,
+                    marginBottom: 14,
                   }}
                 >
 
@@ -1693,8 +1900,7 @@ export default function HospitalKiosk() {
                     style={{
                       fontSize: 36,
                       fontWeight: 800,
-                      color:
-                        "#2563eb",
+                      color: "#2563eb",
                     }}
                   >
                     #{result.token}
@@ -1755,18 +1961,14 @@ export default function HospitalKiosk() {
 
               </div>
 
-              {/* =============================================
-                  PRINT + DOWNLOAD
-              ============================================= */}
+              {/* PRINT + DOWNLOAD */}
 
               <div
                 className="row"
                 style={{
-                  justifyContent:
-                    "center",
+                  justifyContent: "center",
                   marginTop: 18,
-                  flexWrap:
-                    "wrap",
+                  flexWrap: "wrap",
                 }}
               >
 
@@ -1788,18 +1990,14 @@ export default function HospitalKiosk() {
 
               </div>
 
-              {/* =============================================
-                  OTHER ACTIONS
-              ============================================= */}
+              {/* OTHER ACTIONS */}
 
               <div
                 className="row"
                 style={{
-                  justifyContent:
-                    "center",
+                  justifyContent: "center",
                   marginTop: 14,
-                  flexWrap:
-                    "wrap",
+                  flexWrap: "wrap",
                 }}
               >
 
