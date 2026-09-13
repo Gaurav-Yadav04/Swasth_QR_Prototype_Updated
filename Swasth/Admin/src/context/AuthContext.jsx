@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("doctor");
       localStorage.removeItem("doctorToken");
 
-      navigate("/hospital-dashboard");
+      navigate("/hospital-details");
 
       return res.data;
     } catch (error) {
