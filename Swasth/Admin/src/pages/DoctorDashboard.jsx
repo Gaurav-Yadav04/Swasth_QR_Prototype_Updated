@@ -255,7 +255,7 @@ export default function DoctorDashboard() {
 
               <div className="text-right hidden sm:block">
                 <p className="font-semibold text-gray-800">
-                  Dr. {doctor.name}
+                  {doctor.name}
                 </p>
 
                 <p className="text-xs text-gray-500">
@@ -285,7 +285,7 @@ export default function DoctorDashboard() {
                 <div className="hidden group-hover:block absolute right-0 top-12 w-64 max-w-[calc(100vw-24px)] bg-white border rounded-xl shadow-lg p-4">
 
                   <p className="font-bold text-gray-800 break-words">
-                    Dr. {doctor.name}
+                    {doctor.name}
                   </p>
 
                   <p className="text-sm text-gray-500 mt-1">
@@ -335,7 +335,7 @@ export default function DoctorDashboard() {
           </p>
 
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mt-1 break-words">
-            Dr. {doctor.name}
+            {doctor.name}
           </h2>
 
           <p className="text-gray-500 mt-1 text-sm sm:text-base">

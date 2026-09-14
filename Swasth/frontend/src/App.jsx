@@ -5,7 +5,7 @@ import Register from "./pages/Register";
 import Scan from "./pages/Scan";
 import AppointmentPage from "./pages/AppointmentPage";
 import PatientQueue from "./pages/PatientQueue";
-import HospitalKiosk from "./pages/HospitalKiosk";
+
 
 
 import PatientReview from "./pages/PatientReview";
@@ -23,7 +23,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/patient" element={<PatientQueue />} />
-        <Route path="/kiosk" element={<HospitalKiosk />} />
+      
         <Route path="/register" element={<Register />} />
         <Route path="/scan" element={<Scan />} />
         <Route path="/patient-review" element={<PatientReview />} />

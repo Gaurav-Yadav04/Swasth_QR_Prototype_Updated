@@ -1,7 +1,10 @@
+import dotenv from "dotenv";
+
+dotenv.config();
+
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import dotenv from "dotenv";
 
 import patientRoutes from "./routes/patientRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
@@ -10,9 +13,18 @@ import doctorRoutes from "./routes/doctorRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import doctorAppointmentRoutes from "./routes/doctorAppointments.js";
 
-dotenv.config();
-
 const app = express();
+
+/*
+====================================================
+ENVIRONMENT CHECK
+====================================================
+*/
+
+console.log(
+  "JWT_SECRET:",
+  process.env.JWT_SECRET ? "Loaded" : "Missing"
+);
 
 /*
 ====================================================
@@ -72,9 +84,7 @@ mongoose
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log(
-        `API: http://localhost:${PORT}/api`
-      );
+      console.log(`API: http://localhost:${PORT}/api`);
     });
   })
   .catch((err) => {

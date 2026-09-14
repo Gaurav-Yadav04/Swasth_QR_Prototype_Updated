@@ -74,12 +74,7 @@ export default function Footer() {
                 My Queue
               </Link>
 
-              <Link
-                to="/kiosk"
-                className="block text-sm font-medium text-slate-500 transition hover:text-[#0757c9]"
-              >
-                Hospital Kiosk
-              </Link>
+            
 
               <Link
                 to="/doctor"

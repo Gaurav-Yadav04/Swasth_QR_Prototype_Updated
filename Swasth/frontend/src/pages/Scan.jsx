@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import api from "../api/api";
-import QrReader from "../components/QrReader";
+import QrReader from "../../../Admin/src/components/QrReader";
 import PatientSlip from "../components/PatientSlip";
 
 const Scan = () => {

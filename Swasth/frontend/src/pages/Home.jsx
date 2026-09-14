@@ -19,10 +19,6 @@ export default function Home() {
   const [booking, setBooking] = useState(false);
   const [error, setError] = useState("");
 
-  /* =====================================================
-     LOAD DOCTORS
-  ===================================================== */
-
   const fetchDoctors = async () => {
     try {
       setLoading(true);
@@ -57,16 +53,11 @@ export default function Home() {
     fetchDoctors();
   }, []);
 
-  /* =====================================================
-     LOCAL PATIENT PROFILE
-  ===================================================== */
-
   const getLocalProfile = () => {
     try {
-      const raw =
-        localStorage.getItem(
-          "swasth_patient_profile"
-        );
+      const raw = localStorage.getItem(
+        "swasth_patient_profile"
+      );
 
       if (!raw) return {};
 
@@ -85,10 +76,6 @@ export default function Home() {
       return {};
     }
   };
-
-  /* =====================================================
-     GET HOSPITAL ID
-  ===================================================== */
 
   const getHospitalId = (doctor) => {
     if (!doctor) return null;
@@ -141,13 +128,7 @@ export default function Home() {
     return null;
   };
 
-  /* =====================================================
-     GET HOSPITAL NAME
-  ===================================================== */
-
-  const getHospitalNameFromObject = (
-    source
-  ) => {
+  const getHospitalNameFromObject = (source) => {
     if (!source) return "";
 
     if (
@@ -188,10 +169,6 @@ export default function Home() {
     );
   };
 
-  /* =====================================================
-     DEPARTMENTS
-  ===================================================== */
-
   const departments = useMemo(() => {
     return [
       ...new Set(
@@ -206,10 +183,6 @@ export default function Home() {
     ];
   }, [doctors]);
 
-  /* =====================================================
-     HOSPITALS
-  ===================================================== */
-
   const hospitals = useMemo(() => {
     return [
       ...new Set(
@@ -223,10 +196,6 @@ export default function Home() {
       ),
     ];
   }, [doctors]);
-
-  /* =====================================================
-     FILTER DOCTORS
-  ===================================================== */
 
   const filteredDoctors = useMemo(() => {
     const q = query
@@ -284,10 +253,6 @@ export default function Home() {
     hospital,
   ]);
 
-  /* =====================================================
-     CREATE COMPLETE APPOINTMENT OBJECT
-  ===================================================== */
-
   const createCompleteAppointment = (
     backendAppointment,
     doctor,
@@ -298,10 +263,6 @@ export default function Home() {
 
     const appointment =
       backendAppointment || {};
-
-    /* -----------------------------
-       HOSPITAL
-    ----------------------------- */
 
     const hospitalObject =
       appointment.hospital &&
@@ -326,10 +287,6 @@ export default function Home() {
       ) ||
       "Hospital";
 
-    /* -----------------------------
-       DOCTOR
-    ----------------------------- */
-
     const doctorObject =
       appointment.doctor &&
       typeof appointment.doctor ===
@@ -344,10 +301,6 @@ export default function Home() {
       doctor?.name ||
       "-";
 
-    /* -----------------------------
-       DEPARTMENT
-    ----------------------------- */
-
     const departmentName =
       appointment.department ||
       appointment.departmentName ||
@@ -357,10 +310,6 @@ export default function Home() {
       doctor?.department ||
       doctor?.specialization ||
       "-";
-
-    /* -----------------------------
-       ROOM
-    ----------------------------- */
 
     const roomNumber =
       appointment.roomNo ||
@@ -374,10 +323,6 @@ export default function Home() {
       doctor?.room ||
       "-";
 
-    /* -----------------------------
-       PROBLEM / DISEASE
-    ----------------------------- */
-
     const finalDisease =
       appointment.disease ||
       appointment.problem ||
@@ -385,10 +330,6 @@ export default function Home() {
       appointment.complaint ||
       enteredDisease ||
       "Not specified";
-
-    /* -----------------------------
-       PATIENT
-    ----------------------------- */
 
     const patientObject =
       appointment.patient &&
@@ -457,10 +398,6 @@ export default function Home() {
       profile.mobile ||
       "-";
 
-    /* -----------------------------
-       TOKEN
-    ----------------------------- */
-
     const tokenNumber =
       appointment.tokenNumber ??
       appointment.token ??
@@ -469,19 +406,11 @@ export default function Home() {
       appointment.queueNumber ??
       "-";
 
-    /* -----------------------------
-       DATE
-    ----------------------------- */
-
     const appointmentDate =
       appointment.date ||
       appointment.appointmentDate ||
       appointment.appointment_date ||
       null;
-
-    /* -----------------------------
-       TIME
-    ----------------------------- */
 
     const appointmentTime =
       appointment.time ||
@@ -549,10 +478,6 @@ export default function Home() {
         appointmentTime,
     };
   };
-
-  /* =====================================================
-     BOOK APPOINTMENT
-  ===================================================== */
 
   const bookAppointment = async () => {
     if (!selected) return;
@@ -635,11 +560,6 @@ export default function Home() {
         return;
       }
 
-      /*
-       * Backend response ke different formats
-       * handle kar rahe hain.
-       */
-
       let backendAppointment = null;
 
       if (res.data?.appointment) {
@@ -657,13 +577,6 @@ export default function Home() {
         backendAppointment =
           res.data;
       }
-
-      /*
-       * Backend agar hospital/doctor/patient
-       * complete nahi bhejta hai to selected
-       * doctor + local profile se complete object
-       * banega.
-       */
 
       const completeAppointment =
         createCompleteAppointment(
@@ -711,19 +624,11 @@ export default function Home() {
     }
   };
 
-  /* =====================================================
-     CLEAR FILTERS
-  ===================================================== */
-
   const clearFilters = () => {
     setQuery("");
     setDepartment("");
     setHospital("");
   };
-
-  /* =====================================================
-     INITIALS
-  ===================================================== */
 
   const getInitials = (
     name = ""
@@ -739,10 +644,6 @@ export default function Home() {
       .slice(0, 2)
       .toUpperCase();
   };
-
-  /* =====================================================
-     APPOINTMENT HELPERS
-  ===================================================== */
 
   const getPatientSnapshot = () => {
     return (
@@ -1017,10 +918,6 @@ export default function Home() {
     return formatTime();
   };
 
-  /* =====================================================
-     ESCAPE HTML
-  ===================================================== */
-
   const escapeHTML = (
     value
   ) => {
@@ -1048,10 +945,6 @@ export default function Home() {
         "&#039;"
       );
   };
-
-  /* =====================================================
-     PRINT SLIP
-  ===================================================== */
 
   const printSlip = () => {
     if (!booked) return;
@@ -1400,10 +1293,6 @@ window.onload = function () {
 
     printWindow.document.close();
   };
-
-  /* =====================================================
-     DOWNLOAD SLIP
-  ===================================================== */
 
   const downloadSlip = () => {
     if (!booked) return;
@@ -1806,16 +1695,8 @@ body {
     );
   };
 
-  /* =====================================================
-     RENDER
-  ===================================================== */
-
   return (
     <main className="min-h-screen bg-[#f6f9fc] text-slate-900">
-
-      {/* =================================================
-          HERO
-      ================================================= */}
 
       <section className="px-4 pb-10 pt-6 sm:px-6 lg:px-8">
 
@@ -1995,10 +1876,6 @@ body {
 
       </section>
 
-      {/* =================================================
-          QUICK STATS
-      ================================================= */}
-
       <section className="px-4 sm:px-6 lg:px-8">
 
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-3 sm:grid-cols-4">
@@ -2055,10 +1932,6 @@ body {
 
       </section>
 
-      {/* =================================================
-          APPOINTMENT SLIP
-      ================================================= */}
-
       {booked && (
 
         <section
@@ -2069,8 +1942,6 @@ body {
           <div className="mx-auto max-w-7xl">
 
             <div className="overflow-hidden rounded-3xl border border-green-200 bg-white shadow-lg">
-
-              {/* SUCCESS HEADER */}
 
               <div className="border-b border-green-100 bg-green-50 px-5 py-5 sm:px-7">
 
@@ -2112,13 +1983,9 @@ body {
 
               </div>
 
-              {/* SLIP */}
-
               <div className="p-4 sm:p-8">
 
                 <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-7">
-
-                  {/* HEADER */}
 
                   <div className="border-b border-slate-200 pb-5 text-center">
 
@@ -2131,8 +1998,6 @@ body {
                     </p>
 
                   </div>
-
-                  {/* TOKEN */}
 
                   <div className="my-5 rounded-2xl border border-blue-100 bg-blue-50 p-5 text-center">
 
@@ -2149,8 +2014,6 @@ body {
                     </span>
 
                   </div>
-
-                  {/* PATIENT DETAILS */}
 
                   <div className="mb-6">
 
@@ -2213,8 +2076,6 @@ body {
                     </div>
 
                   </div>
-
-                  {/* APPOINTMENT DETAILS */}
 
                   <div>
 
@@ -2308,8 +2169,6 @@ body {
 
                   </div>
 
-                  {/* FOOTER */}
-
                   <div className="mt-6 border-t border-slate-200 pt-4 text-center">
 
                     <p className="text-xs text-slate-400">
@@ -2323,8 +2182,6 @@ body {
                   </div>
 
                 </div>
-
-                {/* ACTIONS */}
 
                 <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
 
@@ -2382,10 +2239,6 @@ body {
 
       )}
 
-      {/* =================================================
-          FIND DOCTOR
-      ================================================= */}
-
       <section className="px-4 pb-14 pt-10 sm:px-6 lg:px-8">
 
         <div className="mx-auto max-w-7xl">
@@ -2419,8 +2272,6 @@ body {
             )}
 
           </div>
-
-          {/* SEARCH */}
 
           <div className="mb-7 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
 
@@ -2519,8 +2370,6 @@ body {
 
           </div>
 
-          {/* ERROR */}
-
           {error && (
 
             <div className="mb-6 flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
@@ -2542,8 +2391,6 @@ body {
 
           )}
 
-          {/* LOADING */}
-
           {loading ? (
 
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -2560,7 +2407,7 @@ body {
 
                   <div
                     key={item}
-                    className="h-72 animate-pulse rounded-2xl border border-slate-200 bg-white"
+                    className="h-80 animate-pulse rounded-2xl border border-slate-200 bg-white"
                   />
 
                 )
@@ -2634,45 +2481,63 @@ body {
                       ?.to ||
                     "-";
 
+                  const doctorName =
+                    doctor.name ||
+                    "Doctor";
+
                   return (
 
                     <article
                       key={
                         doctor._id
                       }
-                      className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl"
+                      className="group relative flex h-full flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-blue-200 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)]"
                     >
 
                       <div
-                        className={`h-1 ${
+                        className={`h-1.5 w-full ${
                           active
                             ? "bg-green-500"
                             : "bg-slate-300"
                         }`}
                       />
 
-                      <div className="flex flex-1 flex-col p-5">
+                      <div className="flex flex-1 flex-col p-5 sm:p-6">
 
                         <div className="flex items-start justify-between gap-3">
 
-                          <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex min-w-0 items-center gap-4">
 
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-lg font-black text-[#0757c9]">
-                              {getInitials(
-                                doctor.name
+                            <div className="relative shrink-0">
+
+                              <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-gradient-to-br from-blue-50 to-blue-100 text-xl font-black text-[#0757c9] ring-1 ring-blue-100">
+                                {getInitials(
+                                  doctorName
+                                )}
+                              </div>
+
+                              {active && (
+                                <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-green-500">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                                </span>
                               )}
+
                             </div>
 
                             <div className="min-w-0">
 
-                              <h3 className="truncate text-base font-black text-slate-900">
-                                {doctor.name}
+                              <h3 className="truncate text-[17px] font-black tracking-tight text-slate-900">
+                                {doctorName}
                               </h3>
 
-                              <p className="mt-1 truncate text-sm font-medium text-[#0757c9]">
+                              <p className="mt-1 truncate text-sm font-semibold text-[#0757c9]">
                                 {doctor.specialization ||
                                   doctor.department ||
                                   "Medical Specialist"}
+                              </p>
+
+                              <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                                OPD Specialist
                               </p>
 
                             </div>
@@ -2680,34 +2545,42 @@ body {
                           </div>
 
                           <span
-                            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-extrabold ${
                               active
-                                ? "bg-green-50 text-green-700"
-                                : "bg-slate-100 text-slate-500"
+                                ? "border-green-200 bg-green-50 text-green-700"
+                                : "border-slate-200 bg-slate-50 text-slate-500"
                             }`}
                           >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                active
+                                  ? "bg-green-500"
+                                  : "bg-slate-400"
+                              }`}
+                            />
+
                             {active
-                              ? "● LIVE"
-                              : "OFFLINE"}
+                              ? "Active"
+                              : "Offline"}
                           </span>
 
                         </div>
 
-                        <div className="mt-6 space-y-3">
+                        <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
 
                           <div className="flex items-start gap-3">
 
-                            <div className="mt-0.5 text-sm">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-base shadow-sm">
                               🏥
                             </div>
 
                             <div className="min-w-0">
 
-                              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
                                 Hospital
                               </p>
 
-                              <p className="truncate text-sm font-semibold text-slate-700">
+                              <p className="mt-1 truncate text-sm font-bold text-slate-800">
                                 {hospitalName}
                               </p>
 
@@ -2715,65 +2588,99 @@ body {
 
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3">
+                        </div>
 
-                            <div className="rounded-xl bg-slate-50 p-3">
+                        <div className="mt-3 grid grid-cols-2 gap-3">
 
-                              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                          <div className="rounded-2xl border border-slate-100 bg-white p-3.5 shadow-sm">
+
+                            <div className="flex items-center gap-2">
+
+                              <span className="text-sm">
+                                🚪
+                              </span>
+
+                              <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">
                                 Room
                               </p>
 
-                              <p className="mt-1 text-sm font-bold text-slate-700">
-                                {room}
+                            </div>
+
+                            <p className="mt-2 text-sm font-black text-slate-800">
+                              {room}
+                            </p>
+
+                          </div>
+
+                          <div className="rounded-2xl border border-slate-100 bg-white p-3.5 shadow-sm">
+
+                            <div className="flex items-center gap-2">
+
+                              <span className="text-sm">
+                                🕘
+                              </span>
+
+                              <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">
+                                OPD Time
                               </p>
 
                             </div>
 
-                            <div className="rounded-xl bg-slate-50 p-3">
-
-                              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                                Timing
-                              </p>
-
-                              <p className="mt-1 truncate text-sm font-bold text-slate-700">
-                                {from} – {to}
-                              </p>
-
-                            </div>
+                            <p className="mt-2 truncate text-sm font-black text-slate-800">
+                              {from} – {to}
+                            </p>
 
                           </div>
 
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
 
-                          <span
-                            className={`text-xs font-bold ${
-                              active
-                                ? "text-green-600"
-                                : "text-slate-400"
-                            }`}
-                          >
-                            {active
-                              ? "Available for booking"
-                              : "Currently unavailable"}
-                          </span>
+                          <div>
+
+                            <p
+                              className={`text-xs font-extrabold ${
+                                active
+                                  ? "text-green-600"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              {active
+                                ? "Available for Appointment"
+                                : "Currently Unavailable"}
+                            </p>
+
+                            {active && (
+                              <p className="mt-1 text-[11px] text-slate-400">
+                                Book your OPD visit
+                              </p>
+                            )}
+
+                          </div>
 
                           {doctor.queueCount !=
                             null && (
 
-                            <span className="text-xs text-slate-400">
-                              {
-                                doctor.queueCount
-                              }{" "}
-                              in queue
-                            </span>
+                            <div className="rounded-xl bg-blue-50 px-3 py-2 text-right">
+
+                              <p className="text-base font-black text-[#0757c9]">
+                                {
+                                  doctor.queueCount
+                                }
+                              </p>
+
+                              <p className="text-[9px] font-bold uppercase tracking-wide text-slate-400">
+                                In Queue
+                              </p>
+
+                            </div>
 
                           )}
 
                         </div>
 
                         <button
+                          type="button"
                           disabled={
                             !active ||
                             !hospitalId
@@ -2787,18 +2694,27 @@ body {
                               ""
                             );
                           }}
-                          className={`mt-5 w-full rounded-xl py-3 text-sm font-bold transition ${
+                          className={`mt-5 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-extrabold transition-all duration-200 ${
                             active &&
                             hospitalId
-                              ? "bg-[#0757c9] text-white shadow-sm hover:bg-[#064aa9] hover:shadow-md"
+                              ? "bg-[#0757c9] text-white shadow-lg shadow-blue-100 hover:-translate-y-0.5 hover:bg-[#064aa9] hover:shadow-xl"
                               : "cursor-not-allowed bg-slate-100 text-slate-400"
                           }`}
                         >
+
                           {!hospitalId
                             ? "Hospital unavailable"
                             : active
-                            ? "Book Appointment →"
+                            ? "Book Appointment"
                             : "Currently Unavailable"}
+
+                          {active &&
+                            hospitalId && (
+                              <span className="text-base">
+                                →
+                              </span>
+                            )}
+
                         </button>
 
                       </div>
@@ -2816,10 +2732,6 @@ body {
         </div>
 
       </section>
-
-      {/* =================================================
-          HOW IT WORKS
-      ================================================= */}
 
       <section className="border-t border-slate-200 bg-white px-4 py-14 sm:px-6 lg:px-8">
 
@@ -2901,10 +2813,6 @@ body {
 
       </section>
 
-      {/* =================================================
-          BOOKING MODAL
-      ================================================= */}
-
       {selected && (
 
         <div
@@ -2930,10 +2838,19 @@ body {
 
                 <div className="flex items-center gap-3">
 
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 font-black text-[#0757c9]">
-                    {getInitials(
-                      selected.name
+                  <div className="relative">
+
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 font-black text-[#0757c9]">
+                      {getInitials(
+                        selected.name
+                      )}
+                    </div>
+
+                    {selected.active !==
+                      false && (
+                      <span className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-white bg-green-500" />
                     )}
+
                   </div>
 
                   <div>
@@ -2962,6 +2879,7 @@ body {
                     setSelected(
                       null
                     );
+
                     setDisease("");
                   }}
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 disabled:opacity-50"
@@ -3058,6 +2976,7 @@ body {
                   setSelected(
                     null
                   );
+
                   setDisease("");
                 }}
                 className="mt-2 w-full py-2 text-sm font-semibold text-slate-500 hover:text-slate-700"
@@ -3072,10 +2991,6 @@ body {
         </div>
 
       )}
-
-      {/* =================================================
-          FOOTER
-      ================================================= */}
 
       {/* <Footer /> */}
 

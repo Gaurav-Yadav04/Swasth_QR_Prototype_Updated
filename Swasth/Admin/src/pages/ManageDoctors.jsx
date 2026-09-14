@@ -1,7 +1,16 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/api";
+
+const daysOfWeek = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 const emptyForm = {
   name: "",
@@ -10,6 +19,7 @@ const emptyForm = {
   specialization: "",
   department: "",
   roomNumber: "",
+  availableDays: [],
   from: "",
   to: "",
   password: "",
@@ -76,9 +86,7 @@ export default function ManageDoctors() {
       console.error("GET DOCTORS ERROR:", err);
 
       if (err.response?.status === 401) {
-        setError(
-          "Hospital login expired. Please login again."
-        );
+        setError("Hospital login expired. Please login again.");
       } else {
         setError(
           err.response?.data?.message ||
@@ -118,11 +126,35 @@ export default function ManageDoctors() {
   };
 
   // ====================================================
+  // DAY SELECTION
+  // ====================================================
+
+  const handleDayChange = (day) => {
+    setFormData((prev) => {
+      const alreadySelected = prev.availableDays.includes(day);
+
+      return {
+        ...prev,
+        availableDays: alreadySelected
+          ? prev.availableDays.filter((item) => item !== day)
+          : [...prev.availableDays, day],
+      };
+    });
+
+    setError("");
+    setMessage("");
+  };
+
+  // ====================================================
   // RESET FORM
   // ====================================================
 
   const resetForm = () => {
-    setFormData({ ...emptyForm });
+    setFormData({
+      ...emptyForm,
+      availableDays: [],
+    });
+
     setEditingId(null);
     setError("");
     setMessage("");
@@ -147,6 +179,18 @@ export default function ManageDoctors() {
       return;
     }
 
+    if (formData.availableDays.length === 0) {
+      setError("Please select at least one available day.");
+      setSaving(false);
+      return;
+    }
+
+    if (formData.from && formData.to && formData.from >= formData.to) {
+      setError("To time must be later than From time.");
+      setSaving(false);
+      return;
+    }
+
     const headers = {
       Authorization: `Bearer ${token}`,
     };
@@ -160,6 +204,8 @@ export default function ManageDoctors() {
         department: formData.department.trim(),
         roomNumber: formData.roomNumber.trim(),
         active: formData.active,
+
+        availableDays: formData.availableDays,
 
         availableTime: {
           from: formData.from,
@@ -177,13 +223,9 @@ export default function ManageDoctors() {
       // ==================================================
 
       if (editingId) {
-        await api.put(
-          `/doctors/${editingId}`,
-          payload,
-          {
-            headers,
-          }
-        );
+        await api.put(`/doctors/${editingId}`, payload, {
+          headers,
+        });
 
         setMessage("Doctor updated successfully.");
       }
@@ -194,27 +236,24 @@ export default function ManageDoctors() {
 
       else {
         if (!formData.password) {
-          setError(
-            "Password is required for a new doctor."
-          );
+          setError("Password is required for a new doctor.");
           setSaving(false);
           return;
         }
 
-        await api.post(
-          "/doctors/add",
-          payload,
-          {
-            headers,
-          }
-        );
+        await api.post("/doctors/add", payload, {
+          headers,
+        });
 
         setMessage("Doctor added successfully.");
       }
 
+      const wasEditing = Boolean(editingId);
+
       resetForm();
+
       setMessage(
-        editingId
+        wasEditing
           ? "Doctor updated successfully."
           : "Doctor added successfully."
       );
@@ -247,6 +286,10 @@ export default function ManageDoctors() {
       specialization: doctor.specialization || "",
       department: doctor.department || "",
       roomNumber: doctor.roomNumber || "",
+
+      availableDays: Array.isArray(doctor.availableDays)
+        ? doctor.availableDays
+        : [],
 
       from: doctor.availableTime?.from || "",
       to: doctor.availableTime?.to || "",
@@ -359,9 +402,7 @@ export default function ManageDoctors() {
   // SAFETY
   // ====================================================
 
-  const doctorList = Array.isArray(doctors)
-    ? doctors
-    : [];
+  const doctorList = Array.isArray(doctors) ? doctors : [];
 
   // ====================================================
   // PAGE
@@ -370,25 +411,23 @@ export default function ManageDoctors() {
   return (
     <main className="min-h-screen bg-gray-100 px-3 py-4 sm:px-5 sm:py-6">
       <div className="mx-auto w-full max-w-7xl">
-
         {/* BACK */}
+
         <div className="mb-4 sm:mb-5">
           <Link
-            to="/hospital-dashboard"
-            className="inline-flex items-center text-sm sm:text-base font-semibold text-blue-600 hover:text-blue-700"
+            to="/hospital-details"
+            className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700 sm:text-base"
           >
             ← Back to Hospital Dashboard
           </Link>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
-
           {/* ==================================================
               ADD / EDIT FORM
           ================================================== */}
 
           <section className="h-fit rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-
             <div className="mb-5">
               <p className="text-sm font-semibold text-blue-600">
                 Hospital Panel
@@ -421,11 +460,7 @@ export default function ManageDoctors() {
 
             {/* FORM */}
 
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-4"
-            >
-
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* NAME */}
 
               <div>
@@ -529,6 +564,47 @@ export default function ManageDoctors() {
                 />
               </div>
 
+              {/* AVAILABLE DAYS */}
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Available Days
+                </label>
+
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
+                  {daysOfWeek.map((day) => {
+                    const selected =
+                      formData.availableDays.includes(day);
+
+                    return (
+                      <label
+                        key={day}
+                        className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 transition ${
+                          selected
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-gray-200 bg-white text-gray-700 hover:border-blue-300"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => handleDayChange(day)}
+                          className="h-4 w-4 shrink-0"
+                        />
+
+                        <span className="text-sm font-medium">
+                          {day}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <p className="mt-2 text-xs text-gray-500">
+                  Select the days when this doctor is available.
+                </p>
+              </div>
+
               {/* TIMING */}
 
               <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
@@ -600,7 +676,6 @@ export default function ManageDoctors() {
               {/* BUTTONS */}
 
               <div className="flex flex-col gap-2 min-[380px]:flex-row">
-
                 <button
                   type="submit"
                   disabled={saving}
@@ -622,7 +697,6 @@ export default function ManageDoctors() {
                     Cancel
                   </button>
                 )}
-
               </div>
             </form>
           </section>
@@ -632,14 +706,14 @@ export default function ManageDoctors() {
           ================================================== */}
 
           <section className="min-w-0 rounded-2xl bg-white p-4 shadow-sm sm:p-6 lg:col-span-2">
-
             <div className="mb-5">
               <h2 className="text-xl font-bold text-gray-800 sm:text-2xl">
                 Existing Doctors
               </h2>
 
               <p className="mt-1 text-xs leading-5 text-gray-500 sm:text-sm">
-                Only doctors belonging to your hospital are shown here.
+                Only doctors belonging to your hospital are shown
+                here.
               </p>
             </div>
 
@@ -650,7 +724,6 @@ export default function ManageDoctors() {
                 Loading doctors...
               </div>
             ) : doctorList.length === 0 ? (
-
               /* NO DOCTORS */
 
               <div className="rounded-xl border border-dashed p-8 text-center sm:p-10">
@@ -658,13 +731,10 @@ export default function ManageDoctors() {
                   No doctors found.
                 </p>
               </div>
-
             ) : (
-
               /* DOCTOR LIST */
 
               <div className="space-y-4">
-
                 {doctorList.map((doctor) => {
                   if (!doctor) {
                     return null;
@@ -675,14 +745,11 @@ export default function ManageDoctors() {
                       key={doctor._id}
                       className="min-w-0 rounded-xl border border-gray-200 p-4 sm:p-5"
                     >
-
                       {/* TOP */}
 
                       <div className="flex flex-col gap-4">
-
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-
                             <h3 className="break-words text-base font-bold text-gray-800 sm:text-lg">
                               {doctor.name || "Doctor"}
                             </h3>
@@ -698,7 +765,6 @@ export default function ManageDoctors() {
                                 ? "Inactive"
                                 : "Active"}
                             </span>
-
                           </div>
 
                           <p className="mt-1 break-words text-sm text-gray-500">
@@ -710,12 +776,9 @@ export default function ManageDoctors() {
                         {/* ACTIONS */}
 
                         <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
-
                           <button
                             type="button"
-                            onClick={() =>
-                              toggleStatus(doctor)
-                            }
+                            onClick={() => toggleStatus(doctor)}
                             className="w-full rounded-lg bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-200"
                           >
                             {doctor.active === false
@@ -725,9 +788,7 @@ export default function ManageDoctors() {
 
                           <button
                             type="button"
-                            onClick={() =>
-                              handleEdit(doctor)
-                            }
+                            onClick={() => handleEdit(doctor)}
                             className="w-full rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-100"
                           >
                             Edit
@@ -742,14 +803,12 @@ export default function ManageDoctors() {
                           >
                             Delete
                           </button>
-
                         </div>
                       </div>
 
                       {/* DETAILS */}
 
                       <div className="mt-4 grid grid-cols-1 gap-3 border-t border-gray-100 pt-4 text-sm sm:grid-cols-2">
-
                         <div className="min-w-0">
                           <span className="text-gray-500">
                             Email:
@@ -786,6 +845,36 @@ export default function ManageDoctors() {
                           </span>
                         </div>
 
+                        {/* AVAILABLE DAYS */}
+
+                        <div className="sm:col-span-2">
+                          <span className="text-gray-500">
+                            Available Days:
+                          </span>
+
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {Array.isArray(
+                              doctor.availableDays
+                            ) &&
+                            doctor.availableDays.length > 0 ? (
+                              doctor.availableDays.map((day) => (
+                                <span
+                                  key={day}
+                                  className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600"
+                                >
+                                  {day}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-gray-700">
+                                No available days set
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* TIMING */}
+
                         <div className="sm:col-span-2">
                           <span className="text-gray-500">
                             Timing:
@@ -796,12 +885,10 @@ export default function ManageDoctors() {
                             {doctor.availableTime?.to || "-"}
                           </span>
                         </div>
-
                       </div>
                     </div>
                   );
                 })}
-
               </div>
             )}
           </section>
