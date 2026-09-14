@@ -83,6 +83,7 @@ export default function Navbar() {
       name: "Home",
       path: "/",
       icon: "⌂",
+      
     },
     {
       name: "My Queue",
@@ -90,10 +91,11 @@ export default function Navbar() {
       icon: "▣",
     },
     {
-      name: "Hospital Kiosk",
-      path: "/kiosk",
-      icon: "⌖",
+      name: "Abmulance",
+      path:  "/ambulance",
+      icon: "*",
     },
+    
   ];
 
   /* =====================================================
