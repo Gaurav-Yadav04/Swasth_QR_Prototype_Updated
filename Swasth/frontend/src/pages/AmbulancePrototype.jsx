@@ -2359,7 +2359,7 @@ export default function AmbulancePrototype() {
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            🛠️ Admin
+            🛠️ Admim
           </button>
         </div>
       </main>
