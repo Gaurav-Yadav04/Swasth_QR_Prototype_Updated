@@ -159,7 +159,7 @@ export default function Footer() {
             <span className="hidden h-1 w-1 rounded-full bg-slate-300 sm:block" />
 
             <span className="text-xs font-semibold text-[#0757c9]">
-              Swasth QR
+              Swasth QR #
             </span>
 
           </div>
