@@ -24,33 +24,30 @@ import React, { useEffect, useMemo, useState } from "react";
    ↓
  Driver accepts
    ↓
- Driver goes ON THE WAY
+ Driver starts trip
    ↓
- Live GPS simulation
+ Live tracking
    ↓
- Ambulance arrives
+ Patient receives ambulance
    ↓
  Trip completed
 
+ Views:
+ 1. Patient
+ 2. Driver
+ 3. Admin
 ===========================================================
 */
-
-/* =========================================================
-   AMBULANCE DATA
-========================================================= */
 
 const INITIAL_AMBULANCES = [
   {
     id: "AMB-101",
-    number: "UP32 AB 1021",
+    vehicleNo: "UP32 AB 1021",
     type: "BLS",
-    typeFull: "Basic Life Support",
     hospital: "District Hospital Ayodhya",
-    hospitalShort: "District Hospital",
-    hospitalLocation: "Ayodhya, Uttar Pradesh",
     driver: "Rahul Verma",
-    driverPhone: "9876543210",
-    driverExperience: "6 years",
+    phone: "9876543210",
+    experience: "6 years",
     rating: 4.8,
     status: "AVAILABLE",
     duty: true,
@@ -68,18 +65,14 @@ const INITIAL_AMBULANCES = [
       y: 70,
     },
   },
-
   {
     id: "AMB-102",
-    number: "UP32 CD 4567",
+    vehicleNo: "UP32 CD 4567",
     type: "ALS",
-    typeFull: "Advanced Life Support",
     hospital: "District Hospital Ayodhya",
-    hospitalShort: "District Hospital",
-    hospitalLocation: "Ayodhya, Uttar Pradesh",
     driver: "Amit Singh",
-    driverPhone: "9911223344",
-    driverExperience: "8 years",
+    phone: "9911223344",
+    experience: "8 years",
     rating: 4.9,
     status: "AVAILABLE",
     duty: true,
@@ -98,18 +91,14 @@ const INITIAL_AMBULANCES = [
       y: 58,
     },
   },
-
   {
     id: "AMB-103",
-    number: "UP32 EF 8910",
+    vehicleNo: "UP32 EF 8910",
     type: "ICU",
-    typeFull: "ICU Ambulance",
     hospital: "District Hospital Ayodhya",
-    hospitalShort: "District Hospital",
-    hospitalLocation: "Ayodhya, Uttar Pradesh",
     driver: "Vikas Yadav",
-    driverPhone: "9988776655",
-    driverExperience: "10 years",
+    phone: "9988776655",
+    experience: "10 years",
     rating: 5.0,
     status: "AVAILABLE",
     duty: true,
@@ -129,18 +118,14 @@ const INITIAL_AMBULANCES = [
       y: 32,
     },
   },
-
   {
     id: "AMB-104",
-    number: "UP32 GH 3344",
+    vehicleNo: "UP32 GH 3344",
     type: "PATIENT",
-    typeFull: "Patient Transport",
     hospital: "Government Medical Centre Lucknow",
-    hospitalShort: "Govt Medical Centre",
-    hospitalLocation: "Lucknow, Uttar Pradesh",
     driver: "Suresh Kumar",
-    driverPhone: "9123456789",
-    driverExperience: "5 years",
+    phone: "9123456789",
+    experience: "5 years",
     rating: 4.7,
     status: "AVAILABLE",
     duty: true,
@@ -159,21 +144,13 @@ const INITIAL_AMBULANCES = [
   },
 ];
 
-/* =========================================================
-   DEMO PATIENT
-========================================================= */
-
 const DEMO_PATIENT = {
   name: "Akash Kumar",
   phone: "9559155555",
   age: 24,
   gender: "Male",
-  location: "Civil Lines, Ayodhya",
+  address: "Civil Lines, Ayodhya",
 };
-
-/* =========================================================
-   HOSPITALS
-========================================================= */
 
 const HOSPITALS = [
   {
@@ -183,7 +160,6 @@ const HOSPITALS = [
     emergency: true,
     phone: "05278-222100",
   },
-
   {
     id: "H002",
     name: "Government Medical Centre Lucknow",
@@ -193,143 +169,118 @@ const HOSPITALS = [
   },
 ];
 
-/* =========================================================
-   HELPER FUNCTIONS
-========================================================= */
-
-const formatCurrency = (amount) => `₹${amount}`;
+const formatCurrency = (value) => {
+  return `₹${Number(value || 0).toLocaleString("en-IN")}`;
+};
 
 const getTypeIcon = (type) => {
-  if (type === "ALS") return "⚕️";
-  if (type === "ICU") return "🫀";
-  if (type === "PATIENT") return "♿";
-  return "🚑";
+  switch (type) {
+    case "BLS":
+      return "🚑";
+    case "ALS":
+      return "🚑";
+    case "ICU":
+      return "🏥";
+    case "PATIENT":
+      return "🚐";
+    default:
+      return "🚑";
+  }
 };
 
 const getTypeDescription = (type) => {
-  if (type === "ALS") {
-    return "Advanced emergency care with cardiac monitoring";
+  switch (type) {
+    case "BLS":
+      return "Basic Life Support";
+    case "ALS":
+      return "Advanced Life Support";
+    case "ICU":
+      return "Mobile ICU";
+    case "PATIENT":
+      return "Patient Transport";
+    default:
+      return "Ambulance";
   }
-
-  if (type === "ICU") {
-    return "Critical care transport with ICU equipment";
-  }
-
-  if (type === "PATIENT") {
-    return "Comfortable non-emergency patient transport";
-  }
-
-  return "Basic emergency support and oxygen facility";
 };
 
-/* =========================================================
-   STATUS BADGE
-========================================================= */
-
 function StatusBadge({ status }) {
-  const map = {
-    AVAILABLE: {
-      text: "Available",
-      className:
-        "bg-emerald-50 text-emerald-700 border-emerald-200",
-      dot: "bg-emerald-500",
-    },
-
-    BOOKED: {
-      text: "Booking Request",
-      className:
-        "bg-orange-50 text-orange-700 border-orange-200",
-      dot: "bg-orange-500",
-    },
-
-    ACCEPTED: {
-      text: "Accepted",
-      className:
-        "bg-blue-50 text-blue-700 border-blue-200",
-      dot: "bg-blue-500",
-    },
-
-    ON_THE_WAY: {
-      text: "On the way",
-      className:
-        "bg-amber-50 text-amber-700 border-amber-200",
-      dot: "bg-amber-500",
-    },
-
-    ARRIVED: {
-      text: "Arrived",
-      className:
-        "bg-purple-50 text-purple-700 border-purple-200",
-      dot: "bg-purple-500",
-    },
-
-    COMPLETED: {
-      text: "Completed",
-      className:
-        "bg-gray-100 text-gray-700 border-gray-200",
-      dot: "bg-gray-500",
-    },
+  const styles = {
+    AVAILABLE:
+      "bg-emerald-50 text-emerald-700 border-emerald-200",
+    BOOKED:
+      "bg-amber-50 text-amber-700 border-amber-200",
+    ACCEPTED:
+      "bg-blue-50 text-blue-700 border-blue-200",
+    ON_THE_WAY:
+      "bg-indigo-50 text-indigo-700 border-indigo-200",
+    ARRIVED:
+      "bg-purple-50 text-purple-700 border-purple-200",
+    COMPLETED:
+      "bg-gray-100 text-gray-700 border-gray-200",
   };
 
-  const item = map[status] || map.AVAILABLE;
+  const labels = {
+    AVAILABLE: "Available",
+    BOOKED: "Booking Received",
+    ACCEPTED: "Accepted",
+    ON_THE_WAY: "On The Way",
+    ARRIVED: "Arrived",
+    COMPLETED: "Completed",
+  };
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${item.className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+        styles[status] || styles.COMPLETED
+      }`}
     >
       <span
-        className={`h-1.5 w-1.5 rounded-full ${item.dot}`}
+        className={`h-1.5 w-1.5 rounded-full ${
+          status === "AVAILABLE"
+            ? "bg-emerald-500"
+            : status === "ARRIVED"
+            ? "bg-purple-500"
+            : status === "ON_THE_WAY"
+            ? "bg-indigo-500"
+            : status === "ACCEPTED"
+            ? "bg-blue-500"
+            : status === "BOOKED"
+            ? "bg-amber-500"
+            : "bg-gray-500"
+        }`}
       />
-      {item.text}
+      {labels[status] || status}
     </span>
   );
 }
 
-/* =========================================================
-   STAT CARD
-========================================================= */
-
-function StatCard({ icon, label, value, sub }) {
+function StatCard({ icon, label, value, subtext }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-gray-500">{label}</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
+          {subtext && (
+            <p className="mt-1 text-xs text-gray-500">{subtext}</p>
+          )}
+        </div>
+
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-xl">
           {icon}
         </div>
       </div>
-
-      <div className="text-2xl font-bold text-gray-900">
-        {value}
-      </div>
-
-      <div className="mt-1 text-sm font-medium text-gray-700">
-        {label}
-      </div>
-
-      {sub && (
-        <div className="mt-1 text-xs text-gray-500">
-          {sub}
-        </div>
-      )}
     </div>
   );
 }
 
-/* =========================================================
-   SECTION TITLE
-========================================================= */
-
-function SectionTitle({
-  eyebrow,
-  title,
-  description,
-}) {
+function SectionTitle({ eyebrow, title, description }) {
   return (
     <div className="mb-5">
       {eyebrow && (
-        <div className="mb-1 text-xs font-bold uppercase tracking-wider text-blue-600">
+        <p className="mb-1 text-xs font-bold uppercase tracking-wider text-blue-600">
           {eyebrow}
-        </div>
+        </p>
       )}
 
       <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
@@ -345,618 +296,556 @@ function SectionTitle({
   );
 }
 
-/* =========================================================
-   MAP COMPONENT
-========================================================= */
-
 function TrackingMap({
   ambulance,
   tracking,
-  patientPosition,
-  hospitalPosition,
+  booking,
 }) {
-  const ambulanceX =
-    tracking && ambulance
-      ? tracking.ambulanceX
-      : ambulance?.location?.x || 40;
+  if (!ambulance) {
+    return (
+      <div className="flex h-full min-h-[360px] items-center justify-center rounded-2xl border border-gray-200 bg-gray-50">
+        <div className="text-center">
+          <div className="text-4xl">🗺️</div>
+          <p className="mt-2 text-sm text-gray-500">
+            No ambulance selected
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-  const ambulanceY =
-    tracking && ambulance
-      ? tracking.ambulanceY
-      : ambulance?.location?.y || 50;
+  const ambulanceX = tracking?.ambulanceX ?? ambulance.location.x;
+  const ambulanceY = tracking?.ambulanceY ?? ambulance.location.y;
 
   return (
-    <div className="relative h-[430px] overflow-hidden rounded-3xl border border-gray-200 bg-[#eef3f7]">
-      {/* MAP GRID */}
-
+    <div className="relative h-full min-h-[360px] overflow-hidden rounded-2xl border border-gray-200 bg-[#eef3f7]">
+      {/* Map grid */}
       <div
-        className="absolute inset-0 opacity-40"
+        className="absolute inset-0 opacity-60"
         style={{
           backgroundImage:
-            "linear-gradient(#d8e0e7 1px, transparent 1px), linear-gradient(90deg, #d8e0e7 1px, transparent 1px)",
-          backgroundSize: "42px 42px",
+            "linear-gradient(#d9e2ea 1px, transparent 1px), linear-gradient(90deg, #d9e2ea 1px, transparent 1px)",
+          backgroundSize: "35px 35px",
         }}
       />
 
-      {/* CITY BLOCKS */}
+      {/* City blocks */}
+      <div className="absolute left-[8%] top-[10%] h-[18%] w-[20%] rounded-xl bg-white/80 shadow-sm" />
+      <div className="absolute left-[35%] top-[8%] h-[14%] w-[22%] rounded-xl bg-white/70 shadow-sm" />
+      <div className="absolute right-[7%] top-[13%] h-[22%] w-[23%] rounded-xl bg-white/80 shadow-sm" />
+      <div className="absolute left-[5%] bottom-[15%] h-[23%] w-[25%] rounded-xl bg-white/70 shadow-sm" />
+      <div className="absolute left-[38%] bottom-[10%] h-[18%] w-[25%] rounded-xl bg-white/80 shadow-sm" />
+      <div className="absolute right-[8%] bottom-[14%] h-[20%] w-[22%] rounded-xl bg-white/70 shadow-sm" />
 
-      <div className="absolute left-[5%] top-[8%] h-20 w-32 rounded-xl bg-white/70" />
+      {/* Roads */}
+      <div className="absolute left-0 top-[52%] h-4 w-full bg-white/90 shadow-sm" />
+      <div className="absolute left-[48%] top-0 h-full w-4 bg-white/90 shadow-sm" />
+      <div className="absolute left-[22%] top-0 h-full w-3 rotate-[18deg] bg-white/70" />
+      <div className="absolute left-0 top-[28%] h-3 w-full rotate-[-8deg] bg-white/70" />
 
-      <div className="absolute right-[7%] top-[12%] h-28 w-40 rounded-xl bg-white/70" />
-
-      <div className="absolute bottom-[12%] left-[12%] h-24 w-44 rounded-xl bg-white/70" />
-
-      <div className="absolute bottom-[10%] right-[12%] h-20 w-36 rounded-xl bg-white/70" />
-
-      {/* ROADS */}
-
-      <div className="absolute left-0 right-0 top-[48%] h-5 -rotate-3 bg-white shadow-sm" />
-
-      <div className="absolute bottom-0 left-[42%] top-0 w-5 rotate-6 bg-white shadow-sm" />
-
-      <div className="absolute left-[15%] right-[5%] top-[22%] h-4 rotate-12 bg-white shadow-sm" />
-
-      <div className="absolute bottom-[18%] left-0 right-[20%] h-4 -rotate-12 bg-white shadow-sm" />
-
-      {/* ROUTE */}
-
+      {/* Route */}
       <svg
         className="absolute inset-0 h-full w-full"
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
       >
         <polyline
-          points={`${patientPosition.x},${patientPosition.y} ${ambulanceX},${ambulanceY} ${hospitalPosition.x},${hospitalPosition.y}`}
+          points={`${ambulanceX},${ambulanceY} 48,56 30,70 72,78`}
           fill="none"
-          stroke="#2563eb"
+          stroke="currentColor"
           strokeWidth="0.9"
           strokeDasharray="2 1.5"
-          opacity="0.9"
-        />
-
-        <circle
-          cx={patientPosition.x}
-          cy={patientPosition.y}
-          r="1.6"
-          fill="#ef4444"
-        />
-
-        <circle
-          cx={hospitalPosition.x}
-          cy={hospitalPosition.y}
-          r="1.6"
-          fill="#16a34a"
+          className="text-blue-600"
         />
       </svg>
 
-      {/* PATIENT */}
-
+      {/* Hospital */}
       <div
-        className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+        className="absolute -translate-x-1/2 -translate-y-1/2"
         style={{
-          left: `${patientPosition.x}%`,
-          top: `${patientPosition.y}%`,
+          left: "72%",
+          top: "78%",
         }}
       >
-        <div className="relative">
-          <div className="absolute -inset-2 animate-ping rounded-full bg-red-400/20" />
-
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-lg">
-            📍
-          </div>
-
-          <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-1 text-[10px] font-semibold text-white">
-            You
-          </div>
-        </div>
-      </div>
-
-      {/* HOSPITAL */}
-
-      <div
-        className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
-        style={{
-          left: `${hospitalPosition.x}%`,
-          top: `${hospitalPosition.y}%`,
-        }}
-      >
-        <div className="relative">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl border-4 border-white bg-emerald-600 text-xl shadow-lg">
+        <div className="flex flex-col items-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border-4 border-white bg-red-500 text-lg shadow-lg">
             🏥
           </div>
-
-          <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-1 text-[10px] font-semibold text-white">
+          <div className="mt-1 whitespace-nowrap rounded-lg bg-white px-2 py-1 text-[10px] font-semibold shadow-md">
             Hospital
           </div>
         </div>
       </div>
 
-      {/* AMBULANCE */}
-
-      {ambulance && (
-        <div
-          className="absolute z-30 -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 ease-linear"
-          style={{
-            left: `${ambulanceX}%`,
-            top: `${ambulanceY}%`,
-          }}
-        >
-          <div className="relative">
-            <div className="absolute -inset-3 animate-pulse rounded-full bg-blue-500/20" />
-
-            <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border-4 border-white bg-blue-600 text-2xl shadow-xl">
-              🚑
-            </div>
-
-            <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-blue-700 px-2 py-1 text-[10px] font-bold text-white shadow">
-              {ambulance.number}
-            </div>
+      {/* Patient */}
+      <div
+        className="absolute -translate-x-1/2 -translate-y-1/2"
+        style={{
+          left: "30%",
+          top: "70%",
+        }}
+      >
+        <div className="flex flex-col items-center">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full border-4 border-white bg-green-500 text-base shadow-lg">
+            👤
           </div>
-        </div>
-      )}
-
-      {/* TOP INFO */}
-
-      <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
-        <div className="rounded-xl border border-gray-200 bg-white/95 px-3 py-2 shadow-sm backdrop-blur">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-            Live Tracking
-          </div>
-
-          <div className="mt-0.5 flex items-center gap-1.5 text-sm font-bold text-gray-900">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-            GPS Active
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white/95 px-3 py-2 text-right shadow-sm backdrop-blur">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-            Demo Map
-          </div>
-
-          <div className="text-xs font-semibold text-gray-700">
-            Ayodhya
+          <div className="mt-1 whitespace-nowrap rounded-lg bg-white px-2 py-1 text-[10px] font-semibold shadow-md">
+            Patient
           </div>
         </div>
       </div>
 
-      {/* BOTTOM INFO */}
-
-      <div className="absolute bottom-4 left-4 right-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white/95 p-3 shadow-lg backdrop-blur">
-          <div className="flex items-center gap-4 text-xs font-medium text-gray-600">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-              Patient
-            </span>
-
-            <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
-              Ambulance
-            </span>
-
-            <span className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-green-600" />
-              Hospital
-            </span>
+      {/* Ambulance */}
+      <div
+        className="absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-700"
+        style={{
+          left: `${ambulanceX}%`,
+          top: `${ambulanceY}%`,
+        }}
+      >
+        <div className="relative">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border-4 border-white bg-blue-600 text-xl shadow-xl">
+            🚑
           </div>
 
-          <div className="text-xs font-bold text-blue-600">
-            Live location updates
-          </div>
+          {booking?.status === "ON_THE_WAY" && (
+            <span className="absolute -right-1 -top-1 flex h-4 w-4">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
+              <span className="relative inline-flex h-4 w-4 rounded-full bg-blue-500" />
+            </span>
+          )}
         </div>
+
+        <div className="mt-1 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-1 text-[10px] font-bold text-white shadow-md">
+          {ambulance.id}
+        </div>
+      </div>
+
+      {/* Map controls */}
+      <div className="absolute right-3 top-3 flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <button className="flex h-9 w-9 items-center justify-center text-lg hover:bg-gray-50">
+          +
+        </button>
+        <div className="h-px bg-gray-200" />
+        <button className="flex h-9 w-9 items-center justify-center text-lg hover:bg-gray-50">
+          −
+        </button>
+      </div>
+
+      {/* Live label */}
+      <div className="absolute left-3 top-3 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+          <span className="text-xs font-bold text-gray-800">
+            Live Tracking
+          </span>
+        </div>
+        <p className="mt-0.5 text-[10px] text-gray-500">
+          GPS simulation active
+        </p>
+      </div>
+
+      {/* ETA */}
+      <div className="absolute bottom-3 left-3 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-md">
+        <p className="text-[10px] font-medium text-gray-500">
+          Estimated arrival
+        </p>
+        <p className="text-lg font-bold text-gray-900">
+          {tracking?.eta ?? ambulance.eta} min
+        </p>
       </div>
     </div>
   );
 }
 
-/* =========================================================
-   AMBULANCE CARD
-========================================================= */
-
 function AmbulanceCard({
   ambulance,
-  selected,
-  onSelect,
   onBook,
+  disabled,
 }) {
   return (
-    <div
-      className={`group rounded-2xl border bg-white p-4 transition ${
-        selected
-          ? "border-blue-500 ring-2 ring-blue-100"
-          : "border-gray-200 hover:border-blue-300 hover:shadow-md"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-2xl">
-            {getTypeIcon(ambulance.type)}
-          </div>
-
-          <div>
-            <div className="text-sm font-bold text-gray-900">
-              {ambulance.typeFull}
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="border-b border-gray-100 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-2xl">
+              {getTypeIcon(ambulance.type)}
             </div>
 
-            <div className="mt-0.5 text-xs font-medium text-gray-500">
-              {ambulance.number}
-            </div>
-          </div>
-        </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-bold text-gray-900">
+                  {ambulance.id}
+                </h3>
+                <StatusBadge status={ambulance.status} />
+              </div>
 
-        <StatusBadge status={ambulance.status} />
-      </div>
-
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <div className="rounded-xl bg-gray-50 p-2.5">
-          <div className="text-[10px] uppercase text-gray-400">
-            ETA
-          </div>
-
-          <div className="mt-0.5 text-sm font-bold text-gray-900">
-            {ambulance.eta} min
-          </div>
-        </div>
-
-        <div className="rounded-xl bg-gray-50 p-2.5">
-          <div className="text-[10px] uppercase text-gray-400">
-            Distance
-          </div>
-
-          <div className="mt-0.5 text-sm font-bold text-gray-900">
-            {ambulance.distance} km
-          </div>
-        </div>
-
-        <div className="rounded-xl bg-gray-50 p-2.5">
-          <div className="text-[10px] uppercase text-gray-400">
-            Fare
-          </div>
-
-          <div className="mt-0.5 text-sm font-bold text-gray-900">
-            {formatCurrency(ambulance.price)}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 border-t border-gray-100 pt-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs text-gray-400">
-              Driver
-            </div>
-
-            <div className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-gray-800">
-              👨‍✈️ {ambulance.driver}
+              <p className="mt-0.5 text-xs text-gray-500">
+                {ambulance.vehicleNo}
+              </p>
             </div>
           </div>
 
           <div className="text-right">
-            <div className="text-xs text-gray-400">
-              Rating
-            </div>
-
-            <div className="mt-0.5 text-sm font-bold text-gray-800">
-              ⭐ {ambulance.rating}
-            </div>
+            <p className="text-lg font-bold text-gray-900">
+              {formatCurrency(ambulance.price)}
+            </p>
+            <p className="text-[10px] text-gray-400">
+              estimated fare
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="mt-3 text-xs text-gray-500">
-        🏥 {ambulance.hospital}
-      </div>
+      <div className="space-y-4 p-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-gray-50 p-3">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+              Type
+            </p>
+            <p className="mt-1 text-sm font-bold text-gray-800">
+              {ambulance.type}
+            </p>
+            <p className="text-[10px] text-gray-500">
+              {getTypeDescription(ambulance.type)}
+            </p>
+          </div>
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {ambulance.equipment.slice(0, 3).map((item) => (
-          <span
-            key={item}
-            className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-medium text-blue-700"
-          >
-            {item}
-          </span>
-        ))}
-      </div>
+          <div className="rounded-xl bg-gray-50 p-3">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+              Distance
+            </p>
+            <p className="mt-1 text-sm font-bold text-gray-800">
+              {ambulance.distance} km
+            </p>
+            <p className="text-[10px] text-gray-500">
+              ~{ambulance.eta} min away
+            </p>
+          </div>
+        </div>
 
-      <div className="mt-4 flex gap-2">
-        <button
-          type="button"
-          onClick={() => onSelect(ambulance)}
-          className={`flex-1 rounded-xl border px-3 py-2.5 text-xs font-bold transition ${
-            selected
-              ? "border-blue-600 bg-blue-600 text-white"
-              : "border-gray-200 bg-white text-gray-700 hover:border-blue-500 hover:text-blue-600"
-          }`}
-        >
-          {selected ? "Selected" : "View Details"}
-        </button>
+        <div>
+          <p className="mb-2 text-xs font-bold text-gray-700">
+            Driver
+          </p>
+
+          <div className="flex items-center justify-between rounded-xl border border-gray-100 p-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-sm">
+                👨‍✈️
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-gray-800">
+                  {ambulance.driver}
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  {ambulance.experience} experience
+                </p>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <p className="text-sm font-bold text-gray-800">
+                ⭐ {ambulance.rating}
+              </p>
+              <p className="text-[10px] text-gray-400">
+                rating
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-xs font-bold text-gray-700">
+            Equipment
+          </p>
+
+          <div className="flex flex-wrap gap-1.5">
+            {ambulance.equipment.map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] text-gray-600"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
 
         <button
           type="button"
           onClick={() => onBook(ambulance)}
-          className="flex-1 rounded-xl bg-gray-900 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-blue-600"
+          disabled={disabled || ambulance.status !== "AVAILABLE"}
+          className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
         >
-          Book Now
+          {ambulance.status === "AVAILABLE"
+            ? "Book Ambulance"
+            : "Currently Unavailable"}
         </button>
       </div>
     </div>
   );
 }
-
-/* =========================================================
-   DRIVER PROFILE
-========================================================= */
 
 function DriverProfile({ ambulance }) {
   if (!ambulance) return null;
 
   return (
-    <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-2xl text-white">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-3xl">
           👨‍✈️
         </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="text-lg font-bold text-gray-900">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900">
             {ambulance.driver}
-          </div>
+          </h3>
+          <p className="text-sm text-gray-500">
+            Professional Ambulance Driver
+          </p>
 
-          <div className="mt-1 text-sm text-gray-500">
-            Verified Ambulance Driver
-          </div>
-
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-              ✓ Verified
-            </span>
-
-            <span className="rounded-full bg-yellow-50 px-2.5 py-1 text-xs font-bold text-yellow-700">
-              ⭐ {ambulance.rating}
-            </span>
+          <div className="mt-1 flex flex-wrap gap-3 text-xs">
+            <span>⭐ {ambulance.rating}</span>
+            <span>•</span>
+            <span>{ambulance.experience}</span>
           </div>
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="rounded-xl bg-gray-50 p-3">
-          <div className="text-xs text-gray-400">
-            Experience
-          </div>
-
-          <div className="mt-1 text-sm font-bold text-gray-800">
-            {ambulance.driverExperience}
-          </div>
+          <p className="text-[10px] text-gray-400">Phone</p>
+          <p className="mt-1 text-xs font-bold text-gray-800">
+            {ambulance.phone}
+          </p>
         </div>
 
         <div className="rounded-xl bg-gray-50 p-3">
-          <div className="text-xs text-gray-400">
-            Ambulance
-          </div>
-
-          <div className="mt-1 text-sm font-bold text-gray-800">
-            {ambulance.number}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3">
-        <div className="text-xs font-semibold text-blue-600">
-          Hospital
+          <p className="text-[10px] text-gray-400">Vehicle</p>
+          <p className="mt-1 text-xs font-bold text-gray-800">
+            {ambulance.vehicleNo}
+          </p>
         </div>
 
-        <div className="mt-1 text-sm font-bold text-gray-900">
-          {ambulance.hospital}
+        <div className="rounded-xl bg-gray-50 p-3">
+          <p className="text-[10px] text-gray-400">Ambulance</p>
+          <p className="mt-1 text-xs font-bold text-gray-800">
+            {ambulance.type}
+          </p>
         </div>
       </div>
     </div>
   );
 }
-
-/* =========================================================
-   BOOKING MODAL
-========================================================= */
 
 function BookingModal({
   ambulance,
   onClose,
   onConfirm,
 }) {
-  const [problem, setProblem] = useState("");
-  const [priority, setPriority] = useState("Normal");
+  const [reason, setReason] = useState("Medical Emergency");
+  const [notes, setNotes] = useState("");
 
   if (!ambulance) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white shadow-2xl">
-        <div className="border-b border-gray-100 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-lg font-bold text-gray-900">
-                Confirm Ambulance Booking
-              </div>
-
-              <div className="mt-1 text-xs text-gray-500">
-                Review your booking details
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
-            >
-              ✕
-            </button>
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">
+              Book Ambulance
+            </h2>
+            <p className="text-xs text-gray-500">
+              Confirm ambulance request
+            </p>
           </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
+          >
+            ✕
+          </button>
         </div>
 
-        <div className="space-y-4 p-5">
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+        <div className="space-y-5 p-5">
+          <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-2xl shadow-sm">
                 {getTypeIcon(ambulance.type)}
               </div>
 
               <div className="flex-1">
-                <div className="text-sm font-bold text-gray-900">
-                  {ambulance.typeFull}
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-bold text-gray-900">
+                    {ambulance.id}
+                  </h3>
+                  <StatusBadge status={ambulance.status} />
                 </div>
 
-                <div className="mt-1 text-xs text-gray-500">
-                  {ambulance.number} • {ambulance.driver}
-                </div>
+                <p className="text-xs text-gray-500">
+                  {ambulance.vehicleNo} • {ambulance.type}
+                </p>
               </div>
 
               <div className="text-right">
-                <div className="text-xs text-gray-400">
-                  Fare
-                </div>
-
-                <div className="text-lg font-bold text-gray-900">
-                  ₹{ambulance.price}
-                </div>
+                <p className="font-bold text-gray-900">
+                  {formatCurrency(ambulance.price)}
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  ~{ambulance.eta} min
+                </p>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-bold text-gray-700">
-              Patient
+            <label className="mb-2 block text-xs font-bold text-gray-700">
+              Emergency / Reason
             </label>
 
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm">
-              <div className="font-semibold text-gray-900">
-                {DEMO_PATIENT.name}
-              </div>
-
-              <div className="mt-1 text-xs text-gray-500">
-                {DEMO_PATIENT.age} years •{" "}
-                {DEMO_PATIENT.gender} •{" "}
-                {DEMO_PATIENT.phone}
-              </div>
-            </div>
+            <select
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            >
+              <option>Medical Emergency</option>
+              <option>Accident</option>
+              <option>Patient Transfer</option>
+              <option>Pregnancy / Maternity</option>
+              <option>Routine Transport</option>
+              <option>Other</option>
+            </select>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-bold text-gray-700">
-              Emergency / Patient Problem
+            <label className="mb-2 block text-xs font-bold text-gray-700">
+              Additional Notes
             </label>
 
             <textarea
-              value={problem}
-              onChange={(e) =>
-                setProblem(e.target.value)
-              }
-              placeholder="Example: Severe chest pain, accident, patient transfer..."
               rows={3}
-              className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Describe patient's condition or special requirement..."
+              className="w-full resize-none rounded-xl border border-gray-200 px-3 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-bold text-gray-700">
-              Priority
-            </label>
+          <div className="rounded-2xl border border-gray-200 p-4">
+            <p className="mb-3 text-xs font-bold text-gray-700">
+              Patient Details
+            </p>
 
-            <div className="grid grid-cols-3 gap-2">
-              {["Normal", "Urgent", "Emergency"].map(
-                (item) => (
-                  <button
-                    type="button"
-                    key={item}
-                    onClick={() =>
-                      setPriority(item)
-                    }
-                    className={`rounded-xl border px-3 py-2.5 text-xs font-bold ${
-                      priority === item
-                        ? "border-blue-600 bg-blue-600 text-white"
-                        : "border-gray-200 text-gray-700 hover:border-blue-400"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                )
-              )}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] text-gray-400">Name</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {DEMO_PATIENT.name}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[10px] text-gray-400">Age</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {DEMO_PATIENT.age} years
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[10px] text-gray-400">Gender</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {DEMO_PATIENT.gender}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[10px] text-gray-400">Phone</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {DEMO_PATIENT.phone}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <p className="text-[10px] text-gray-400">
+                Pickup Location
+              </p>
+              <p className="text-sm font-semibold text-gray-800">
+                {DEMO_PATIENT.address}
+              </p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-xs leading-5 text-amber-800">
-            <b>Demo note:</b> This prototype simulates
-            ambulance dispatch and live GPS tracking. In
-            the real system, driver GPS would come from the
-            driver's mobile device.
-          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
 
-          <button
-            type="button"
-            onClick={() =>
-              onConfirm({
-                problem:
-                  problem || "Not specified",
-                priority,
-              })
-            }
-            className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
-          >
-            🚑 Confirm & Book Ambulance
-          </button>
+            <button
+              type="button"
+              onClick={() =>
+                onConfirm({
+                  reason,
+                  notes,
+                })
+              }
+              className="flex-1 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700"
+            >
+              Confirm Booking
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* =========================================================
-   BOOKING TRACKER
-========================================================= */
-
 function BookingTracker({
-  ambulance,
   booking,
+  ambulance,
   tracking,
-  onDriverAccept,
-  onStartTrip,
-  onComplete,
   onCancel,
 }) {
-  if (!ambulance || !booking) return null;
+  if (!booking || !ambulance) return null;
 
   const steps = [
     {
       key: "BOOKED",
-      title: "Booking placed",
-      icon: "✓",
+      label: "Booking Placed",
+      icon: "📝",
     },
-
     {
       key: "ACCEPTED",
-      title: "Driver accepted",
-      icon: "👨‍✈️",
+      label: "Driver Accepted",
+      icon: "✓",
     },
-
     {
       key: "ON_THE_WAY",
-      title: "Ambulance on the way",
+      label: "On The Way",
       icon: "🚑",
     },
-
     {
       key: "ARRIVED",
-      title: "Ambulance arrived",
+      label: "Arrived",
       icon: "📍",
     },
-
     {
       key: "COMPLETED",
-      title: "Trip completed",
+      label: "Completed",
       icon: "✓",
     },
   ];
 
-  const statusOrder = [
+  const order = [
     "BOOKED",
     "ACCEPTED",
     "ON_THE_WAY",
@@ -964,634 +853,464 @@ function BookingTracker({
     "COMPLETED",
   ];
 
-  const currentIndex = statusOrder.indexOf(
-    booking.status
-  );
+  const currentIndex = order.indexOf(booking.status);
 
   return (
     <div className="space-y-5">
-      {/* STATUS HEADER */}
-
-      <div className="rounded-3xl bg-gray-900 p-5 text-white shadow-xl">
-        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-              Active Ambulance Booking
-            </div>
+            <p className="text-xs font-bold uppercase tracking-wider text-blue-600">
+              Ambulance Booking
+            </p>
 
-            <div className="mt-2 text-2xl font-bold">
-              {booking.status === "COMPLETED"
-                ? "Trip completed"
-                : booking.status === "ARRIVED"
-                ? "Ambulance has arrived"
-                : booking.status === "ON_THE_WAY"
-                ? "Ambulance is on the way"
-                : booking.status === "ACCEPTED"
-                ? "Driver accepted your request"
-                : "Waiting for driver confirmation"}
-            </div>
+            <h2 className="mt-1 text-xl font-bold text-gray-900">
+              {booking.bookingId}
+            </h2>
 
-            <div className="mt-2 text-sm text-gray-400">
-              Booking ID:{" "}
-              <b className="text-gray-200">
-                {booking.id}
-              </b>
-            </div>
+            <p className="mt-1 text-sm text-gray-500">
+              {ambulance.id} • {ambulance.vehicleNo}
+            </p>
           </div>
 
-          <div className="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
-            <div className="text-xs text-gray-400">
-              Ambulance
-            </div>
-
-            <div className="mt-1 text-lg font-bold">
-              {ambulance.number}
-            </div>
-
-            <div className="mt-1 text-xs text-gray-400">
-              {ambulance.typeFull}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* PROGRESS */}
-
-      <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="mb-5 text-sm font-bold text-gray-900">
-          Booking Progress
+          <StatusBadge status={booking.status} />
         </div>
 
-        <div className="space-y-4">
-          {steps.map((step, index) => {
-            const done = index <= currentIndex;
-            const active = index === currentIndex;
+        <div className="mt-6 overflow-x-auto">
+          <div className="flex min-w-[650px] items-start">
+            {steps.map((step, index) => {
+              const completed = index <= currentIndex;
+              const isCurrent = index === currentIndex;
 
-            return (
-              <div
-                key={step.key}
-                className="flex items-start gap-3"
-              >
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${
-                      done
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-400"
-                    } ${
-                      active
-                        ? "ring-4 ring-blue-100"
-                        : ""
-                    }`}
-                  >
-                    {step.icon}
+              return (
+                <React.Fragment key={step.key}>
+                  <div className="flex w-[130px] flex-col items-center text-center">
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold ${
+                        completed
+                          ? "border-blue-600 bg-blue-600 text-white"
+                          : "border-gray-200 bg-white text-gray-400"
+                      } ${isCurrent ? "ring-4 ring-blue-100" : ""}`}
+                    >
+                      {step.icon}
+                    </div>
+
+                    <p
+                      className={`mt-2 text-xs font-semibold ${
+                        completed
+                          ? "text-gray-900"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {step.label}
+                    </p>
                   </div>
 
                   {index < steps.length - 1 && (
                     <div
-                      className={`mt-1 h-7 w-0.5 ${
+                      className={`mt-5 h-0.5 flex-1 ${
                         index < currentIndex
                           ? "bg-blue-600"
                           : "bg-gray-200"
                       }`}
                     />
                   )}
-                </div>
-
-                <div className="pt-1">
-                  <div
-                    className={`text-sm font-bold ${
-                      done
-                        ? "text-gray-900"
-                        : "text-gray-400"
-                    }`}
-                  >
-                    {step.title}
-                  </div>
-
-                  {active && (
-                    <div className="mt-1 text-xs text-blue-600">
-                      Current status
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                </React.Fragment>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* LIVE TRACKING */}
+      <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="min-h-[360px]">
+          <TrackingMap
+            ambulance={ambulance}
+            tracking={tracking}
+            booking={booking}
+          />
+        </div>
 
-      {booking.status !== "BOOKED" &&
-        booking.status !== "COMPLETED" && (
-          <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-              <div>
-                <div className="text-lg font-bold text-gray-900">
-                  Live Ambulance Tracking
-                </div>
+        <div className="space-y-5">
+          <DriverProfile ambulance={ambulance} />
 
-                <div className="mt-1 text-xs text-gray-500">
-                  Driver location is being updated in real
-                  time
-                </div>
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="font-bold text-gray-900">
+              Live Trip Details
+            </h3>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-[10px] text-gray-400">
+                  Distance
+                </p>
+                <p className="mt-1 text-lg font-bold text-gray-900">
+                  {tracking.distance.toFixed(1)} km
+                </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-[10px] text-gray-400">
+                  ETA
+                </p>
+                <p className="mt-1 text-lg font-bold text-gray-900">
+                  {Math.max(0, Math.ceil(tracking.eta))} min
+                </p>
+              </div>
 
-                <span className="text-xs font-bold text-green-600">
-                  LIVE
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-[10px] text-gray-400">
+                  Speed
+                </p>
+                <p className="mt-1 text-lg font-bold text-gray-900">
+                  {tracking.speed} km/h
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-[10px] text-gray-400">
+                  Fare
+                </p>
+                <p className="mt-1 text-lg font-bold text-gray-900">
+                  {formatCurrency(ambulance.price)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Driver</span>
+                <span className="font-semibold text-gray-800">
+                  {ambulance.driver}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Phone</span>
+                <span className="font-semibold text-gray-800">
+                  {ambulance.phone}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Hospital</span>
+                <span className="max-w-[180px] text-right font-semibold text-gray-800">
+                  {ambulance.hospital}
                 </span>
               </div>
             </div>
 
-            <TrackingMap
-              ambulance={ambulance}
-              tracking={tracking}
-              patientPosition={{
-                x: 23,
-                y: 70,
-              }}
-              hospitalPosition={{
-                x: 78,
-                y: 28,
-              }}
-            />
-          </div>
-        )}
-
-      {/* ETA INFO */}
-
-      {booking.status === "ON_THE_WAY" && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard
-            icon="⏱️"
-            label="Estimated Arrival"
-            value={`${tracking.eta} min`}
-            sub="Updated live"
-          />
-
-          <StatCard
-            icon="📍"
-            label="Distance"
-            value={`${tracking.distance} km`}
-            sub="Remaining"
-          />
-
-          <StatCard
-            icon="🚑"
-            label="Speed"
-            value={`${tracking.speed} km/h`}
-            sub="Current speed"
-          />
-
-          <StatCard
-            icon="🛰️"
-            label="GPS"
-            value="Live"
-            sub="Location active"
-          />
-        </div>
-      )}
-
-      {/* BOOKING DETAILS */}
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <SectionTitle
-            eyebrow="Booking"
-            title="Patient Details"
-          />
-
-          <div className="space-y-3">
-            <div className="flex justify-between gap-4 text-sm">
-              <span className="text-gray-500">
-                Patient
-              </span>
-
-              <span className="font-semibold text-gray-900">
-                {DEMO_PATIENT.name}
-              </span>
-            </div>
-
-            <div className="flex justify-between gap-4 text-sm">
-              <span className="text-gray-500">
-                Phone
-              </span>
-
-              <span className="font-semibold text-gray-900">
-                {DEMO_PATIENT.phone}
-              </span>
-            </div>
-
-            <div className="flex justify-between gap-4 text-sm">
-              <span className="text-gray-500">
-                Problem
-              </span>
-
-              <span className="max-w-[60%] text-right font-semibold text-gray-900">
-                {booking.problem}
-              </span>
-            </div>
-
-            <div className="flex justify-between gap-4 text-sm">
-              <span className="text-gray-500">
-                Priority
-              </span>
-
-              <span
-                className={`font-bold ${
-                  booking.priority === "Emergency"
-                    ? "text-red-600"
-                    : booking.priority === "Urgent"
-                    ? "text-amber-600"
-                    : "text-green-600"
-                }`}
+            {booking.status !== "COMPLETED" && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="mt-5 w-full rounded-xl border border-red-200 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50"
               >
-                {booking.priority}
-              </span>
-            </div>
-
-            <div className="flex justify-between gap-4 text-sm">
-              <span className="text-gray-500">
-                Pickup
-              </span>
-
-              <span className="max-w-[60%] text-right font-semibold text-gray-900">
-                {DEMO_PATIENT.location}
-              </span>
-            </div>
+                Cancel Booking
+              </button>
+            )}
           </div>
         </div>
-
-        <DriverProfile ambulance={ambulance} />
       </div>
 
-      {/* DRIVER DEMO CONTROLS */}
-
-      <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5">
-        <div className="mb-4">
-          <div className="text-lg font-bold text-gray-900">
-            👨‍✈️ Driver Demo Controls
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <div className="flex gap-3">
+          <div className="text-xl">💡</div>
+          <div>
+            <p className="text-sm font-bold text-amber-900">
+              Prototype Demo
+            </p>
+            <p className="mt-1 text-xs leading-5 text-amber-800">
+              The ambulance location and ETA are simulated for this
+              college prototype. In the final system, GPS location
+              can be received from the driver's mobile device.
+            </p>
           </div>
-
-          <div className="mt-1 text-xs text-gray-500">
-            Use these buttons during your college
-            presentation to simulate the real driver
-            application.
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {booking.status === "BOOKED" && (
-            <button
-              type="button"
-              onClick={onDriverAccept}
-              className="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-700"
-            >
-              ✓ Accept Booking
-            </button>
-          )}
-
-          {booking.status === "ACCEPTED" && (
-            <button
-              type="button"
-              onClick={onStartTrip}
-              className="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-white hover:bg-amber-600"
-            >
-              🚑 Start & Go On The Way
-            </button>
-          )}
-
-          {booking.status === "ARRIVED" && (
-            <button
-              type="button"
-              onClick={onComplete}
-              className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
-            >
-              ✓ Complete Trip
-            </button>
-          )}
-
-          {booking.status !== "COMPLETED" && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50"
-            >
-              Cancel Demo
-            </button>
-          )}
         </div>
       </div>
     </div>
   );
 }
 
-/* =========================================================
-   DRIVER DASHBOARD
-========================================================= */
-
 function DriverDashboard({
   ambulance,
   booking,
-  duty,
-  setDuty,
   onAccept,
   onStartTrip,
   onArrive,
   onComplete,
+  onDutyChange,
+  duty,
 }) {
-  const [driverTab, setDriverTab] =
-    useState("overview");
+  const [activeTab, setActiveTab] = useState("overview");
 
-  if (!ambulance) return null;
+  if (!ambulance) {
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center">
+        <div className="text-4xl">🚑</div>
+        <h2 className="mt-3 text-lg font-bold text-gray-900">
+          No ambulance assigned
+        </h2>
+      </div>
+    );
+  }
+
+  const tabs = [
+    {
+      id: "overview",
+      label: "Overview",
+    },
+    {
+      id: "request",
+      label: "Current Request",
+    },
+    {
+      id: "vehicle",
+      label: "Vehicle",
+    },
+  ];
 
   return (
     <div className="space-y-5">
-      {/* DRIVER HEADER */}
-
-      <div className="rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 p-5 text-white shadow-xl sm:p-6">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-4 border-b border-gray-100 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-3xl">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-3xl">
               👨‍✈️
             </div>
 
             <div>
-              <div className="text-xl font-bold">
+              <p className="text-xs text-gray-400">
+                Driver Dashboard
+              </p>
+
+              <h1 className="text-xl font-bold text-gray-900">
                 {ambulance.driver}
-              </div>
+              </h1>
 
-              <div className="mt-1 text-sm text-gray-400">
-                {ambulance.number} •{" "}
-                {ambulance.typeFull}
-              </div>
-
-              <div className="mt-2 flex flex-wrap gap-2">
-                <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-300">
-                  ✓ Verified Driver
-                </span>
-
-                <span className="rounded-full bg-yellow-500/10 px-2.5 py-1 text-xs font-bold text-yellow-300">
-                  ⭐ {ambulance.rating}
-                </span>
-              </div>
+              <p className="text-sm text-gray-500">
+                {ambulance.id} • {ambulance.vehicleNo}
+              </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setDuty(!duty)}
-            disabled={
-              booking &&
-              ["ACCEPTED", "ON_THE_WAY", "ARRIVED"].includes(
-                booking.status
-              )
-            }
-            className={`rounded-2xl px-5 py-3 text-sm font-bold transition ${
-              duty
-                ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                : "bg-white/10 text-gray-300 hover:bg-white/20"
-            }`}
-          >
-            {duty ? "🟢 ON DUTY" : "⚫ OFF DUTY"}
-          </button>
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 px-4 py-3 sm:min-w-[180px]">
+            <div>
+              <p className="text-xs font-bold text-gray-800">
+                Duty Status
+              </p>
+              <p className="text-[10px] text-gray-500">
+                {duty ? "Available for requests" : "Currently offline"}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onDutyChange(!duty)}
+              className={`relative h-7 w-12 rounded-full transition ${
+                duty ? "bg-emerald-500" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition ${
+                  duty ? "left-6" : "left-1"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex overflow-x-auto px-5">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`border-b-2 px-4 py-3 text-sm font-semibold whitespace-nowrap ${
+                activeTab === tab.id
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* DRIVER TABS */}
-
-      <div className="flex overflow-x-auto rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
-        {[
-          ["overview", "Overview"],
-          ["request", "Booking"],
-          ["vehicle", "Ambulance"],
-        ].map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setDriverTab(key)}
-            className={`whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-bold ${
-              driverTab === key
-                ? "bg-blue-600 text-white"
-                : "text-gray-500 hover:bg-gray-100"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* OVERVIEW */}
-
-      {driverTab === "overview" && (
+      {activeTab === "overview" && (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               icon="🚑"
-              label="Duty Status"
-              value={duty ? "ON" : "OFF"}
-              sub="Availability"
-            />
-
-            <StatCard
-              icon="📦"
-              label="Today's Trips"
-              value="07"
-              sub="+2 from yesterday"
+              label="Ambulance"
+              value={ambulance.type}
+              subtext={ambulance.vehicleNo}
             />
 
             <StatCard
               icon="⭐"
               label="Rating"
               value={ambulance.rating}
-              sub="Based on 124 trips"
+              subtext="Driver rating"
             />
 
             <StatCard
-              icon="🛣️"
-              label="Today's Distance"
-              value="68 km"
-              sub="Total driven"
+              icon="📍"
+              label="Location"
+              value={`${ambulance.distance} km`}
+              subtext="From patient"
+            />
+
+            <StatCard
+              icon="⏱️"
+              label="ETA"
+              value={`${ambulance.eta} min`}
+              subtext="Estimated arrival"
             />
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-              <SectionTitle
-                eyebrow="Driver"
-                title="Profile"
-              />
+            <DriverProfile ambulance={ambulance} />
 
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">
-                    Full Name
-                  </span>
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h3 className="font-bold text-gray-900">
+                Current Status
+              </h3>
 
-                  <span className="font-semibold">
-                    {ambulance.driver}
-                  </span>
-                </div>
-
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">
-                    Experience
-                  </span>
-
-                  <span className="font-semibold">
-                    {ambulance.driverExperience}
-                  </span>
-                </div>
-
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">
-                    Phone
-                  </span>
-
-                  <span className="font-semibold">
-                    {ambulance.driverPhone}
-                  </span>
-                </div>
-
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">
-                    Hospital
-                  </span>
-
-                  <span className="max-w-[60%] text-right font-semibold">
-                    {ambulance.hospital}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-              <SectionTitle
-                eyebrow="Current"
-                title="Vehicle Status"
-              />
-
-              <div className="flex items-center gap-4 rounded-2xl bg-blue-50 p-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white text-2xl shadow-sm">
-                  🚑
-                </div>
-
-                <div className="flex-1">
-                  <div className="font-bold text-gray-900">
-                    {ambulance.number}
-                  </div>
-
-                  <div className="mt-1 text-xs text-gray-500">
-                    {ambulance.typeFull}
+              <div className="mt-4 flex items-center justify-between rounded-xl bg-gray-50 p-4">
+                <div>
+                  <p className="text-xs text-gray-400">
+                    Ambulance Status
+                  </p>
+                  <div className="mt-2">
+                    <StatusBadge status={ambulance.status} />
                   </div>
                 </div>
 
-                <StatusBadge
-                  status={
-                    booking
-                      ? booking.status
-                      : "AVAILABLE"
-                  }
-                />
+                <div className="text-4xl">
+                  {getTypeIcon(ambulance.type)}
+                </div>
               </div>
+
+              {booking ? (
+                <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-4">
+                  <p className="text-xs font-bold text-blue-800">
+                    Active Booking
+                  </p>
+
+                  <p className="mt-1 text-sm font-bold text-gray-900">
+                    {booking.bookingId}
+                  </p>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    Patient: {booking.patient.name}
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-xl border border-dashed border-gray-200 p-5 text-center">
+                  <p className="text-sm font-semibold text-gray-700">
+                    No active booking
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    New requests will appear here.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </>
       )}
 
-      {/* REQUEST */}
-
-      {driverTab === "request" && (
-        <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-          <SectionTitle
-            eyebrow="Incoming"
-            title="Current Booking Request"
-            description="This is how the request can appear on the driver's mobile dashboard."
-          />
+      {activeTab === "request" && (
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-gray-900">
+            Current Booking Request
+          </h2>
 
           {!booking ? (
-            <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center">
+            <div className="mt-6 rounded-2xl border border-dashed border-gray-200 p-10 text-center">
               <div className="text-4xl">📭</div>
-
-              <div className="mt-3 text-sm font-bold text-gray-700">
-                No active booking
-              </div>
-
-              <div className="mt-1 text-xs text-gray-400">
-                New requests will appear here
-              </div>
+              <p className="mt-3 font-semibold text-gray-800">
+                No booking request
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                Waiting for a new patient request.
+              </p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                    Booking {booking.id}
+            <div className="mt-5 space-y-5">
+              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
+                      Booking ID
+                    </p>
+
+                    <h3 className="mt-1 text-xl font-bold text-gray-900">
+                      {booking.bookingId}
+                    </h3>
                   </div>
 
-                  <div className="mt-1 text-xl font-bold text-gray-900">
-                    {DEMO_PATIENT.name}
-                  </div>
-
-                  <div className="mt-1 text-sm text-gray-500">
-                    📍 {DEMO_PATIENT.location}
-                  </div>
-                </div>
-
-                <StatusBadge
-                  status={booking.status}
-                />
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl bg-white p-3">
-                  <div className="text-xs text-gray-400">
-                    Problem
-                  </div>
-
-                  <div className="mt-1 text-sm font-bold">
-                    {booking.problem}
-                  </div>
-                </div>
-
-                <div className="rounded-xl bg-white p-3">
-                  <div className="text-xs text-gray-400">
-                    Priority
-                  </div>
-
-                  <div className="mt-1 text-sm font-bold">
-                    {booking.priority}
-                  </div>
-                </div>
-
-                <div className="rounded-xl bg-white p-3">
-                  <div className="text-xs text-gray-400">
-                    Fare
-                  </div>
-
-                  <div className="mt-1 text-sm font-bold">
-                    ₹{ambulance.price}
-                  </div>
+                  <StatusBadge status={booking.status} />
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-gray-200 p-4">
+                  <p className="text-xs font-bold text-gray-700">
+                    Patient
+                  </p>
+
+                  <p className="mt-2 text-sm font-bold text-gray-900">
+                    {booking.patient.name}
+                  </p>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    {booking.patient.age} years •{" "}
+                    {booking.patient.gender}
+                  </p>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    📞 {booking.patient.phone}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-gray-200 p-4">
+                  <p className="text-xs font-bold text-gray-700">
+                    Pickup
+                  </p>
+
+                  <p className="mt-2 text-sm font-bold text-gray-900">
+                    {booking.patient.address}
+                  </p>
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    Reason: {booking.reason}
+                  </p>
+                </div>
+              </div>
+
+              {booking.notes && (
+                <div className="rounded-xl border border-gray-200 p-4">
+                  <p className="text-xs font-bold text-gray-700">
+                    Patient Notes
+                  </p>
+
+                  <p className="mt-2 text-sm text-gray-600">
+                    {booking.notes}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3">
                 {booking.status === "BOOKED" && (
                   <button
                     type="button"
-                    disabled={!duty}
                     onClick={onAccept}
-                    className={`rounded-xl px-4 py-2.5 text-xs font-bold ${
-                      duty
-                        ? "bg-blue-600 text-white hover:bg-blue-700"
-                        : "cursor-not-allowed bg-gray-200 text-gray-400"
-                    }`}
+                    className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-700"
                   >
-                    ✓ Accept Request
+                    Accept Request
                   </button>
                 )}
 
@@ -1599,9 +1318,9 @@ function DriverDashboard({
                   <button
                     type="button"
                     onClick={onStartTrip}
-                    className="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-white hover:bg-amber-600"
+                    className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-700"
                   >
-                    🚑 Start Trip
+                    Start Trip
                   </button>
                 )}
 
@@ -1609,9 +1328,9 @@ function DriverDashboard({
                   <button
                     type="button"
                     onClick={onArrive}
-                    className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-700"
+                    className="rounded-xl bg-purple-600 px-5 py-3 text-sm font-bold text-white hover:bg-purple-700"
                   >
-                    📍 Mark Arrived
+                    Mark Arrived
                   </button>
                 )}
 
@@ -1619,93 +1338,108 @@ function DriverDashboard({
                   <button
                     type="button"
                     onClick={onComplete}
-                    className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
+                    className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-700"
                   >
-                    ✓ Complete Trip
+                    Complete Trip
                   </button>
                 )}
               </div>
-
-              {!duty &&
-                booking.status === "BOOKED" && (
-                  <div className="mt-3 text-xs font-medium text-red-600">
-                    Driver must be ON DUTY to accept a
-                    booking.
-                  </div>
-                )}
             </div>
           )}
         </div>
       )}
 
-      {/* VEHICLE */}
-
-      {driverTab === "vehicle" && (
+      {activeTab === "vehicle" && (
         <div className="grid gap-5 lg:grid-cols-2">
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-            <SectionTitle
-              eyebrow="Ambulance"
-              title="Vehicle Information"
-            />
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-3xl">
+                {getTypeIcon(ambulance.type)}
+              </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">
-                  Registration
+              <div>
+                <p className="text-xs text-gray-400">
+                  Vehicle
+                </p>
+
+                <h2 className="text-xl font-bold text-gray-900">
+                  {ambulance.vehicleNo}
+                </h2>
+
+                <p className="text-sm text-gray-500">
+                  {ambulance.type} Ambulance
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {ambulance.equipment.map((item) => (
+                <div
+                  key={item}
+                  className="flex items-center gap-3 rounded-xl bg-gray-50 p-3"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-sm">
+                    ✓
+                  </span>
+
+                  <span className="text-sm font-medium text-gray-700">
+                    {item}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="font-bold text-gray-900">
+              Vehicle Information
+            </h3>
+
+            <div className="mt-5 space-y-4">
+              <div className="flex justify-between border-b border-gray-100 pb-3">
+                <span className="text-sm text-gray-500">
+                  Ambulance ID
                 </span>
-
-                <span className="font-bold">
-                  {ambulance.number}
+                <span className="text-sm font-semibold text-gray-800">
+                  {ambulance.id}
                 </span>
               </div>
 
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">
+              <div className="flex justify-between border-b border-gray-100 pb-3">
+                <span className="text-sm text-gray-500">
+                  Vehicle Number
+                </span>
+                <span className="text-sm font-semibold text-gray-800">
+                  {ambulance.vehicleNo}
+                </span>
+              </div>
+
+              <div className="flex justify-between border-b border-gray-100 pb-3">
+                <span className="text-sm text-gray-500">
                   Type
                 </span>
-
-                <span className="font-bold">
-                  {ambulance.typeFull}
+                <span className="text-sm font-semibold text-gray-800">
+                  {getTypeDescription(ambulance.type)}
                 </span>
               </div>
 
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">
+              <div className="flex justify-between border-b border-gray-100 pb-3">
+                <span className="text-sm text-gray-500">
                   Hospital
                 </span>
-
-                <span className="max-w-[60%] text-right font-bold">
+                <span className="max-w-[220px] text-right text-sm font-semibold text-gray-800">
                   {ambulance.hospital}
                 </span>
               </div>
 
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">
-                  Status
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">
+                  Driver
                 </span>
-
-                <span className="font-bold text-emerald-600">
-                  {duty ? "ON DUTY" : "OFF DUTY"}
+                <span className="text-sm font-semibold text-gray-800">
+                  {ambulance.driver}
                 </span>
               </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-            <SectionTitle
-              eyebrow="Equipment"
-              title="Available Equipment"
-            />
-
-            <div className="grid grid-cols-2 gap-2">
-              {ambulance.equipment.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-xl bg-gray-50 p-3 text-xs font-semibold text-gray-700"
-                >
-                  ✓ {item}
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -1714,224 +1448,185 @@ function DriverDashboard({
   );
 }
 
-/* =========================================================
-   ADMIN DASHBOARD
-========================================================= */
-
 function AdminDashboard({
   ambulances,
   booking,
   selectedAmbulance,
-  dutyMap,
+  onReset,
 }) {
   const available = ambulances.filter(
-    (a) =>
-      a.duty &&
-      a.status === "AVAILABLE"
+    (item) =>
+      item.status === "AVAILABLE" && item.duty
   ).length;
 
-  const onTrip =
-    booking &&
-    ["ACCEPTED", "ON_THE_WAY", "ARRIVED"].includes(
-      booking.status
-    )
-      ? 1
-      : 0;
+  const booked = ambulances.filter(
+    (item) =>
+      item.status !== "AVAILABLE" &&
+      item.status !== "COMPLETED"
+  ).length;
 
-  const hospitals = new Set(
-    ambulances.map((a) => a.hospital)
-  ).size;
+  const offline = ambulances.filter(
+    (item) => !item.duty
+  ).length;
 
   return (
     <div className="space-y-5">
-      <div className="rounded-3xl bg-gradient-to-br from-blue-700 to-blue-600 p-6 text-white shadow-xl">
-        <div className="text-xs font-bold uppercase tracking-widest text-blue-200">
-          Hospital Operations
-        </div>
-
-        <div className="mt-2 text-2xl font-bold">
-          Ambulance Control Centre
-        </div>
-
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">
-          Monitor ambulance availability, driver duty
-          status, active bookings and live emergency trips
-          from one dashboard.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon="🚑"
           label="Total Ambulances"
           value={ambulances.length}
-          sub="Registered"
+          subtext="Registered fleet"
         />
 
         <StatCard
           icon="🟢"
           label="Available"
           value={available}
-          sub="Ready for booking"
+          subtext="Ready for booking"
         />
 
         <StatCard
-          icon="📍"
+          icon="🚨"
           label="Active Trips"
-          value={onTrip}
-          sub="Currently running"
+          value={booked}
+          subtext="Currently assigned"
         />
 
         <StatCard
-          icon="🏥"
-          label="Hospitals"
-          value={hospitals}
-          sub="Connected"
+          icon="⚪"
+          label="Offline"
+          value={offline}
+          subtext="Not on duty"
         />
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-100 p-5">
-          <div className="text-lg font-bold text-gray-900">
-            Ambulance Fleet
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">
+              Ambulance Fleet
+            </h2>
+            <p className="text-xs text-gray-500">
+              Monitor all demo ambulances
+            </p>
           </div>
 
-          <div className="mt-1 text-xs text-gray-500">
-            Live operational status
-          </div>
+          <button
+            type="button"
+            onClick={onReset}
+            className="rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50"
+          >
+            Reset Demo
+          </button>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left">
+          <table className="min-w-[800px] w-full text-left">
             <thead className="bg-gray-50">
-              <tr className="text-xs font-bold uppercase tracking-wide text-gray-400">
-                <th className="px-5 py-3">
+              <tr>
+                <th className="px-5 py-3 text-xs font-bold text-gray-500">
                   Ambulance
                 </th>
-
-                <th className="px-5 py-3">
-                  Type
-                </th>
-
-                <th className="px-5 py-3">
+                <th className="px-5 py-3 text-xs font-bold text-gray-500">
                   Driver
                 </th>
-
-                <th className="px-5 py-3">
+                <th className="px-5 py-3 text-xs font-bold text-gray-500">
                   Hospital
                 </th>
-
-                <th className="px-5 py-3">
+                <th className="px-5 py-3 text-xs font-bold text-gray-500">
+                  Type
+                </th>
+                <th className="px-5 py-3 text-xs font-bold text-gray-500">
                   Duty
                 </th>
-
-                <th className="px-5 py-3">
+                <th className="px-5 py-3 text-xs font-bold text-gray-500">
                   Status
                 </th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-gray-100">
-              {ambulances.map((a) => {
-                const isDuty =
-                  dutyMap[a.id] !== undefined
-                    ? dutyMap[a.id]
-                    : a.duty;
-
-                const isActive =
-                  booking &&
-                  selectedAmbulance?.id === a.id;
-
-                return (
-                  <tr
-                    key={a.id}
-                    className={
-                      isActive
-                        ? "bg-blue-50"
-                        : "hover:bg-gray-50"
-                    }
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="text-xl">
-                          {getTypeIcon(a.type)}
-                        </div>
-
-                        <div>
-                          <div className="text-sm font-bold text-gray-900">
-                            {a.number}
-                          </div>
-
-                          <div className="text-xs text-gray-400">
-                            {a.id}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="px-5 py-4 text-sm font-medium text-gray-700">
-                      {a.typeFull}
-                    </td>
-
-                    <td className="px-5 py-4 text-sm font-medium text-gray-700">
-                      {a.driver}
-                    </td>
-
-                    <td className="px-5 py-4 text-xs text-gray-600">
-                      {a.hospital}
-                    </td>
-
-                    <td className="px-5 py-4">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                          isDuty
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {isDuty
-                          ? "ON DUTY"
-                          : "OFF DUTY"}
+              {ambulances.map((item) => (
+                <tr key={item.id} className="hover:bg-gray-50">
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">
+                        {getTypeIcon(item.type)}
                       </span>
-                    </td>
 
-                    <td className="px-5 py-4">
-                      <StatusBadge
-                        status={
-                          isActive
-                            ? booking.status
-                            : a.status
-                        }
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          {item.id}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {item.vehicleNo}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <p className="text-sm font-semibold text-gray-800">
+                      {item.driver}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      ⭐ {item.rating}
+                    </p>
+                  </td>
+
+                  <td className="px-5 py-4 text-sm text-gray-600">
+                    {item.hospital}
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                      {item.type}
+                    </span>
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <span
+                      className={`text-xs font-bold ${
+                        item.duty
+                          ? "text-emerald-600"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {item.duty ? "ON DUTY" : "OFF DUTY"}
+                    </span>
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <StatusBadge status={item.status} />
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </div>
 
       {booking && selectedAmbulance && (
-        <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5">
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                Active Trip
-              </div>
+              <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
+                Active Demo Trip
+              </p>
 
-              <div className="mt-1 text-lg font-bold text-gray-900">
-                {selectedAmbulance.number}
-              </div>
+              <h3 className="mt-1 text-lg font-bold text-gray-900">
+                {booking.bookingId}
+              </h3>
 
-              <div className="mt-1 text-sm text-gray-500">
-                Driver: {selectedAmbulance.driver}
-              </div>
+              <p className="mt-1 text-sm text-gray-600">
+                {selectedAmbulance.id} •{" "}
+                {selectedAmbulance.driver} •{" "}
+                {booking.patient.name}
+              </p>
             </div>
 
-            <StatusBadge
-              status={booking.status}
-            />
+            <StatusBadge status={booking.status} />
           </div>
         </div>
       )}
@@ -1939,13 +1634,8 @@ function AdminDashboard({
   );
 }
 
-/* =========================================================
-   MAIN COMPONENT
-========================================================= */
-
 export default function AmbulancePrototype() {
-  const [activeView, setActiveView] =
-    useState("patient");
+  const [activeView, setActiveView] = useState("patient");
 
   const [ambulances, setAmbulances] = useState(
     INITIAL_AMBULANCES
@@ -1954,25 +1644,22 @@ export default function AmbulancePrototype() {
   const [selectedAmbulance, setSelectedAmbulance] =
     useState(null);
 
-  const [selectedType, setSelectedType] =
-    useState("ALL");
-
+  const [selectedType, setSelectedType] = useState("ALL");
   const [selectedHospital, setSelectedHospital] =
     useState("ALL");
 
-  const [bookingModal, setBookingModal] =
-    useState(false);
+  const [bookingModal, setBookingModal] = useState(false);
 
   const [booking, setBooking] = useState(null);
 
   const [dutyMap, setDutyMap] = useState(() => {
-    const result = {};
+    const map = {};
 
     INITIAL_AMBULANCES.forEach((item) => {
-      result[item.id] = item.duty;
+      map[item.id] = item.duty;
     });
 
-    return result;
+    return map;
   });
 
   const [tracking, setTracking] = useState({
@@ -1983,66 +1670,58 @@ export default function AmbulancePrototype() {
     speed: 32,
   });
 
-  /* =======================================================
-     FILTER
-  ======================================================= */
-
   const filteredAmbulances = useMemo(() => {
-    return ambulances.filter((item) => {
+    return ambulances.filter((ambulance) => {
       const typeMatch =
         selectedType === "ALL" ||
-        item.type === selectedType;
+        ambulance.type === selectedType;
 
       const hospitalMatch =
         selectedHospital === "ALL" ||
-        item.hospital === selectedHospital;
+        ambulance.hospital === selectedHospital;
+
+      const dutyMatch = dutyMap[ambulance.id];
 
       return (
         typeMatch &&
         hospitalMatch &&
-        item.duty &&
-        item.status === "AVAILABLE"
+        dutyMatch &&
+        ambulance.status === "AVAILABLE"
       );
     });
   }, [
     ambulances,
     selectedType,
     selectedHospital,
+    dutyMap,
   ]);
-
-  /* =======================================================
-     OPEN BOOKING
-  ======================================================= */
 
   const handleOpenBooking = (ambulance) => {
     setSelectedAmbulance(ambulance);
     setBookingModal(true);
   };
 
-  /* =======================================================
-     CONFIRM BOOKING
-  ======================================================= */
-
   const handleConfirmBooking = ({
-    problem,
-    priority,
+    reason,
+    notes,
   }) => {
     if (!selectedAmbulance) return;
 
+    const bookingId = `SWQ-${Math.floor(
+      100000 + Math.random() * 900000
+    )}`;
+
     const newBooking = {
-      id: `SWQ-${Math.floor(
-        100000 + Math.random() * 900000
-      )}`,
-      ambulanceId: selectedAmbulance.id,
+      bookingId,
       status: "BOOKED",
-      problem,
-      priority,
-      createdAt: new Date().toLocaleTimeString(),
+      createdAt: new Date().toISOString(),
+      reason,
+      notes,
+      patient: DEMO_PATIENT,
+      ambulanceId: selectedAmbulance.id,
     };
 
     setBooking(newBooking);
-    setBookingModal(false);
-    setActiveView("patient");
 
     setAmbulances((prev) =>
       prev.map((item) =>
@@ -2054,14 +1733,22 @@ export default function AmbulancePrototype() {
           : item
       )
     );
+
+    setBookingModal(false);
+
+    setTracking({
+      ambulanceX: selectedAmbulance.location.x,
+      ambulanceY: selectedAmbulance.location.y,
+      distance: selectedAmbulance.distance,
+      eta: selectedAmbulance.eta,
+      speed: 32,
+    });
+
+    setActiveView("patient");
   };
 
-  /* =======================================================
-     DRIVER ACCEPT
-  ======================================================= */
-
   const handleDriverAccept = () => {
-    if (!booking) return;
+    if (!booking || !selectedAmbulance) return;
 
     setBooking((prev) => ({
       ...prev,
@@ -2070,7 +1757,7 @@ export default function AmbulancePrototype() {
 
     setAmbulances((prev) =>
       prev.map((item) =>
-        item.id === selectedAmbulance?.id
+        item.id === selectedAmbulance.id
           ? {
               ...item,
               status: "ACCEPTED",
@@ -2080,12 +1767,8 @@ export default function AmbulancePrototype() {
     );
   };
 
-  /* =======================================================
-     START TRIP
-  ======================================================= */
-
   const handleStartTrip = () => {
-    if (!booking) return;
+    if (!booking || !selectedAmbulance) return;
 
     setBooking((prev) => ({
       ...prev,
@@ -2094,7 +1777,7 @@ export default function AmbulancePrototype() {
 
     setAmbulances((prev) =>
       prev.map((item) =>
-        item.id === selectedAmbulance?.id
+        item.id === selectedAmbulance.id
           ? {
               ...item,
               status: "ON_THE_WAY",
@@ -2104,20 +1787,16 @@ export default function AmbulancePrototype() {
     );
 
     setTracking({
-      ambulanceX: 44,
-      ambulanceY: 59,
-      distance: 2.4,
-      eta: 8,
+      ambulanceX: selectedAmbulance.location.x,
+      ambulanceY: selectedAmbulance.location.y,
+      distance: selectedAmbulance.distance,
+      eta: selectedAmbulance.eta,
       speed: 32,
     });
   };
 
-  /* =======================================================
-     ARRIVE
-  ======================================================= */
-
   const handleArrive = () => {
-    if (!booking) return;
+    if (!booking || !selectedAmbulance) return;
 
     setBooking((prev) => ({
       ...prev,
@@ -2126,7 +1805,7 @@ export default function AmbulancePrototype() {
 
     setAmbulances((prev) =>
       prev.map((item) =>
-        item.id === selectedAmbulance?.id
+        item.id === selectedAmbulance.id
           ? {
               ...item,
               status: "ARRIVED",
@@ -2135,21 +1814,17 @@ export default function AmbulancePrototype() {
       )
     );
 
-    setTracking({
-      ambulanceX: 23,
+    setTracking((prev) => ({
+      ...prev,
+      ambulanceX: 30,
       ambulanceY: 70,
       distance: 0,
       eta: 0,
-      speed: 0,
-    });
+    }));
   };
 
-  /* =======================================================
-     COMPLETE
-  ======================================================= */
-
   const handleComplete = () => {
-    if (!booking) return;
+    if (!booking || !selectedAmbulance) return;
 
     setBooking((prev) => ({
       ...prev,
@@ -2158,7 +1833,7 @@ export default function AmbulancePrototype() {
 
     setAmbulances((prev) =>
       prev.map((item) =>
-        item.id === selectedAmbulance?.id
+        item.id === selectedAmbulance.id
           ? {
               ...item,
               status: "AVAILABLE",
@@ -2168,26 +1843,25 @@ export default function AmbulancePrototype() {
     );
   };
 
-  /* =======================================================
-     CANCEL
-  ======================================================= */
-
   const handleCancel = () => {
-    if (selectedAmbulance) {
-      setAmbulances((prev) =>
-        prev.map((item) =>
-          item.id === selectedAmbulance.id
-            ? {
-                ...item,
-                status: "AVAILABLE",
-              }
-            : item
-        )
-      );
+    if (!booking || !selectedAmbulance) {
+      setBooking(null);
+      setSelectedAmbulance(null);
+      return;
     }
 
+    setAmbulances((prev) =>
+      prev.map((item) =>
+        item.id === selectedAmbulance.id
+          ? {
+              ...item,
+              status: "AVAILABLE",
+            }
+          : item
+      )
+    );
+
     setBooking(null);
-    setBookingModal(false);
     setSelectedAmbulance(null);
 
     setTracking({
@@ -2199,95 +1873,79 @@ export default function AmbulancePrototype() {
     });
   };
 
-  /* =======================================================
-     DUTY CHANGE
-  ======================================================= */
-
-  const handleDutyChange = (value) => {
-    if (!selectedAmbulance) return;
-
-    if (
-      booking &&
-      ["ACCEPTED", "ON_THE_WAY", "ARRIVED"].includes(
-        booking.status
-      )
-    ) {
-      return;
-    }
-
+  const handleDutyChange = (ambulanceId, value) => {
     setDutyMap((prev) => ({
       ...prev,
-      [selectedAmbulance.id]: value,
+      [ambulanceId]: value,
     }));
 
     setAmbulances((prev) =>
       prev.map((item) =>
-        item.id === selectedAmbulance.id
+        item.id === ambulanceId
           ? {
               ...item,
               duty: value,
-              status: value
-                ? "AVAILABLE"
-                : "AVAILABLE",
+              status:
+                value && item.status === "COMPLETED"
+                  ? "AVAILABLE"
+                  : item.status,
             }
           : item
       )
     );
   };
 
-  /* =======================================================
-     AUTO GPS SIMULATION
-  ======================================================= */
-
   useEffect(() => {
-    if (!booking) return;
-
-    if (booking.status !== "ON_THE_WAY") {
-      return;
+    if (
+      !booking ||
+      booking.status !== "ON_THE_WAY" ||
+      !selectedAmbulance
+    ) {
+      return undefined;
     }
 
-    const timer = setInterval(() => {
+    const interval = setInterval(() => {
       setTracking((prev) => {
-        const nextX = Math.max(
-          23,
-          prev.ambulanceX - 1.15
-        );
-
-        const nextY =
-          prev.ambulanceY < 70
-            ? prev.ambulanceY + 0.5
-            : 70;
-
         const nextDistance = Math.max(
-          0.3,
-          Number(
-            (prev.distance - 0.18).toFixed(1)
-          )
+          0,
+          prev.distance - 0.18
         );
 
         const nextEta = Math.max(
-          1,
-          Math.ceil(nextDistance * 3.2)
+          0,
+          prev.eta - 0.6
         );
 
+        const currentX = prev.ambulanceX;
+        const currentY = prev.ambulanceY;
+
+        const targetX = 30;
+        const targetY = 70;
+
+        const nextX =
+          currentX + (targetX - currentX) * 0.055;
+
+        const nextY =
+          currentY + (targetY - currentY) * 0.055;
+
         if (nextDistance <= 0.3) {
-          setBooking((current) => {
+          setBooking((prevBooking) => {
             if (
-              current &&
-              current.status === "ON_THE_WAY"
+              !prevBooking ||
+              prevBooking.status !== "ON_THE_WAY"
             ) {
-              return {
-                ...current,
-                status: "ARRIVED",
-              };
+              return prevBooking;
             }
 
-            return current;
+            return {
+              ...prevBooking,
+              status: "ARRIVED",
+            };
           });
 
           setAmbulances((prevAmbulances) =>
             prevAmbulances.map((item) =>
-              item.id === selectedAmbulance?.id
+              item.id === selectedAmbulance.id
                 ? {
                     ...item,
                     status: "ARRIVED",
@@ -2297,50 +1955,41 @@ export default function AmbulancePrototype() {
           );
 
           return {
-            ambulanceX: 23,
-            ambulanceY: 70,
+            ...prev,
+            ambulanceX: targetX,
+            ambulanceY: targetY,
             distance: 0,
             eta: 0,
-            speed: 0,
           };
         }
 
         return {
+          ...prev,
           ambulanceX: nextX,
           ambulanceY: nextY,
           distance: nextDistance,
           eta: nextEta,
-          speed: Math.max(
-            20,
-            Math.floor(prev.speed - 1)
-          ),
         };
       });
     }, 1800);
 
-    return () => clearInterval(timer);
+    return () => clearInterval(interval);
   }, [booking, selectedAmbulance]);
 
-  /* =======================================================
-     RESET DEMO
-  ======================================================= */
-
   const resetDemo = () => {
-    setActiveView("patient");
     setAmbulances(INITIAL_AMBULANCES);
-    setSelectedAmbulance(null);
-    setSelectedType("ALL");
-    setSelectedHospital("ALL");
-    setBooking(null);
-    setBookingModal(false);
 
-    const result = {};
+    const newDutyMap = {};
 
     INITIAL_AMBULANCES.forEach((item) => {
-      result[item.id] = item.duty;
+      newDutyMap[item.id] = item.duty;
     });
 
-    setDutyMap(result);
+    setDutyMap(newDutyMap);
+
+    setSelectedAmbulance(null);
+    setBooking(null);
+    setBookingModal(false);
 
     setTracking({
       ambulanceX: 48,
@@ -2349,656 +1998,380 @@ export default function AmbulancePrototype() {
       eta: 8,
       speed: 32,
     });
-  };
 
-  /* =======================================================
-     CURRENT DRIVER
-  ======================================================= */
+    setSelectedType("ALL");
+    setSelectedHospital("ALL");
+    setActiveView("patient");
+  };
 
   const currentDriverAmbulance =
     selectedAmbulance ||
-    ambulances.find((item) => item.duty) ||
+    ambulances.find((item) => dutyMap[item.id]) ||
     ambulances[0];
-
-  /* =======================================================
-     HEADER + MAIN UI
-  ======================================================= */
 
   return (
     <div className="min-h-screen bg-[#f7f9fc] text-gray-900">
-      {/* ==================================================
-          HEADER
-      ================================================== */}
 
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 shadow-sm backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-xl text-white shadow-md">
-              🚑
-            </div>
-
-            <div>
-              <div className="text-base font-extrabold tracking-tight text-gray-900">
-                Swasth QR
-              </div>
-
-              <div className="hidden text-[10px] font-semibold uppercase tracking-wider text-gray-400 sm:block">
-                Smart Ambulance Network
-              </div>
-            </div>
-          </div>
-
-          {/* DESKTOP SWITCHER */}
-
-          <div className="hidden items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1 md:flex">
-            {[
-              ["patient", "👤 Patient"],
-              ["driver", "👨‍✈️ Driver"],
-              ["admin", "🏥 Admin"],
-            ].map(([key, label]) => (
-              <button
-                type="button"
-                key={key}
-                onClick={() =>
-                  setActiveView(key)
-                }
-                className={`rounded-lg px-3 py-2 text-xs font-bold transition ${
-                  activeView === key
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-500 hover:text-gray-800"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="hidden rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 sm:block">
-              ● System Online
-            </div>
-
-            <button
-              type="button"
-              onClick={resetDemo}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-600 hover:border-blue-300 hover:text-blue-600"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-
-        {/* MOBILE VIEW SWITCHER */}
-
-        <div className="border-t border-gray-100 px-4 py-2 md:hidden">
-          <div className="mx-auto flex max-w-7xl gap-1 rounded-xl bg-gray-100 p-1">
-            {[
-              ["patient", "👤 Patient"],
-              ["driver", "👨‍✈️ Driver"],
-              ["admin", "🏥 Admin"],
-            ].map(([key, label]) => (
-              <button
-                type="button"
-                key={key}
-                onClick={() =>
-                  setActiveView(key)
-                }
-                className={`flex-1 rounded-lg px-2 py-2 text-[11px] font-bold ${
-                  activeView === key
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-500"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
-
-      {/* ==================================================
-          MAIN
-      ================================================== */}
-
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        {/* =================================================
-            PATIENT VIEW
-        ================================================= */}
-
+      {/* MAIN */}
+      <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+        {/* PATIENT VIEW */}
         {activeView === "patient" && (
-          <div className="space-y-7">
-            {/* HERO */}
-
-            <section className="overflow-hidden rounded-[28px] bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500 p-6 text-white shadow-xl sm:p-8 lg:p-10">
-              <div className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-blue-50">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-green-300" />
-                    Emergency Transport Network
-                  </div>
-
-                  <h1 className="mt-5 max-w-2xl text-3xl font-extrabold leading-tight sm:text-4xl lg:text-5xl">
-                    Get the right ambulance,
-                    <span className="text-blue-200">
-                      {" "}
-                      when you need it.
-                    </span>
-                  </h1>
-
-                  <p className="mt-4 max-w-xl text-sm leading-6 text-blue-100 sm:text-base">
-                    Find nearby ambulances, choose the
-                    required medical support, book instantly
-                    and track your ambulance in real time.
-                  </p>
-
-                  <div className="mt-6 flex flex-wrap gap-2">
-                    <div className="rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold">
-                      📍 Live GPS
-                    </div>
-
-                    <div className="rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold">
-                      ⏱️ Live ETA
-                    </div>
-
-                    <div className="rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold">
-                      👨‍✈️ Verified Drivers
-                    </div>
-
-                    <div className="rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold">
-                      🏥 Hospital Connected
-                    </div>
-                  </div>
-                </div>
-
-                <div className="relative hidden min-h-[250px] lg:block">
-                  <div className="absolute right-5 top-5 h-52 w-52 rounded-full border border-white/10 bg-white/5" />
-
-                  <div className="absolute bottom-3 right-10 flex h-28 w-28 items-center justify-center rounded-[30px] border border-white/20 bg-white/10 text-6xl shadow-2xl backdrop-blur">
-                    🚑
-                  </div>
-
-                  <div className="absolute left-5 top-12 rounded-2xl bg-white px-4 py-3 text-gray-900 shadow-xl">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
-                      Nearest ambulance
-                    </div>
-
-                    <div className="mt-1 text-lg font-extrabold">
-                      8 min
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-3 left-0 rounded-2xl bg-white px-4 py-3 text-gray-900 shadow-xl">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
-                      GPS status
-                    </div>
-
-                    <div className="mt-1 flex items-center gap-1.5 text-sm font-bold">
-                      <span className="h-2 w-2 rounded-full bg-green-500" />
-                      Live
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* ACTIVE BOOKING */}
-
-            {booking && selectedAmbulance && (
-              <BookingTracker
-                ambulance={selectedAmbulance}
-                booking={booking}
-                tracking={tracking}
-                onDriverAccept={
-                  handleDriverAccept
-                }
-                onStartTrip={handleStartTrip}
-                onComplete={handleComplete}
-                onCancel={handleCancel}
-              />
-            )}
-
-            {/* SEARCH */}
-
-            {!booking && (
+          <div className="space-y-6">
+            {!booking ? (
               <>
+                <section className="overflow-hidden rounded-3xl bg-gray-900 p-6 text-white shadow-sm sm:p-8">
+                  <div className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+                    <div>
+                      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-semibold">
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                        Ambulance Service Available
+                      </div>
+
+                      <h1 className="max-w-2xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                        Get the right ambulance,
+                        <span className="text-blue-400">
+                          {" "}when you need it.
+                        </span>
+                      </h1>
+
+                      <p className="mt-4 max-w-xl text-sm leading-6 text-gray-300 sm:text-base">
+                        Find nearby ambulances, compare emergency
+                        support, book instantly and track the
+                        vehicle in real time.
+                      </p>
+
+                      <div className="mt-6 flex flex-wrap gap-3">
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                          <p className="text-lg font-bold">
+                            {ambulances.filter(
+                              (a) =>
+                                a.status === "AVAILABLE" &&
+                                a.duty
+                            ).length}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Available now
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                          <p className="text-lg font-bold">
+                            &lt; 10 min
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Average response
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                          <p className="text-lg font-bold">
+                            24×7
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Emergency support
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="hidden justify-center lg:flex">
+                      <div className="relative flex h-64 w-64 items-center justify-center rounded-full border border-white/10 bg-white/5">
+                        <div className="absolute h-48 w-48 rounded-full border border-white/10" />
+                        <div className="absolute h-32 w-32 rounded-full border border-white/10" />
+
+                        <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-blue-600 text-5xl shadow-2xl">
+                          🚑
+                        </div>
+
+                        <div className="absolute right-5 top-12 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-xs backdrop-blur">
+                          <span className="font-bold">
+                            Live GPS
+                          </span>
+                        </div>
+
+                        <div className="absolute bottom-10 left-2 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-xs backdrop-blur">
+                          <span className="font-bold">
+                            Fast Response
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
                 <section>
                   <SectionTitle
                     eyebrow="Find ambulance"
-                    title="Choose your ambulance"
-                    description="Select the ambulance type and hospital network according to the patient's requirement."
+                    title="Choose an ambulance"
+                    description="Select the ambulance according to your medical requirement."
                   />
 
-                  <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-                    <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
-                      <div>
-                        <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                          Ambulance Type
-                        </label>
-
-                        <select
-                          value={selectedType}
-                          onChange={(e) =>
-                            setSelectedType(
-                              e.target.value
-                            )
-                          }
-                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        >
-                          <option value="ALL">
-                            All Ambulance Types
-                          </option>
-
-                          <option value="BLS">
-                            🚑 Basic Life Support
-                          </option>
-
-                          <option value="ALS">
-                            ⚕️ Advanced Life Support
-                          </option>
-
-                          <option value="ICU">
-                            🫀 ICU Ambulance
-                          </option>
-
-                          <option value="PATIENT">
-                            ♿ Patient Transport
-                          </option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                          Hospital
-                        </label>
-
-                        <select
-                          value={selectedHospital}
-                          onChange={(e) =>
-                            setSelectedHospital(
-                              e.target.value
-                            )
-                          }
-                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        >
-                          <option value="ALL">
-                            All Hospitals
-                          </option>
-
-                          {HOSPITALS.map(
-                            (hospital) => (
-                              <option
-                                key={hospital.id}
-                                value={hospital.name}
-                              >
-                                {hospital.name}
-                              </option>
-                            )
-                          )}
-                        </select>
-                      </div>
-
-                      <div className="flex items-end">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedType("ALL");
-                            setSelectedHospital(
-                              "ALL"
-                            );
-                          }}
-                          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold text-gray-600 hover:border-blue-400 hover:text-blue-600 lg:w-auto"
-                        >
-                          Clear Filters
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* QUICK TYPE */}
-
-                <section>
-                  <div className="mb-3 flex items-center justify-between">
-                    <div className="text-sm font-bold text-gray-900">
-                      Ambulance categories
-                    </div>
-
-                    <div className="text-xs text-gray-400">
-                      {filteredAmbulances.length}{" "}
-                      available
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {[
-                      {
-                        type: "BLS",
-                        title: "BLS",
-                        desc: "Basic support",
-                        icon: "🚑",
-                      },
-                      {
-                        type: "ALS",
-                        title: "ALS",
-                        desc: "Advanced care",
-                        icon: "⚕️",
-                      },
-                      {
-                        type: "ICU",
-                        title: "ICU",
-                        desc: "Critical care",
-                        icon: "🫀",
-                      },
-                      {
-                        type: "PATIENT",
-                        title: "Patient",
-                        desc: "Transport",
-                        icon: "♿",
-                      },
-                    ].map((item) => (
-                      <button
-                        type="button"
-                        key={item.type}
-                        onClick={() =>
-                          setSelectedType(
-                            item.type
-                          )
-                        }
-                        className={`rounded-2xl border p-4 text-left transition ${
-                          selectedType === item.type
-                            ? "border-blue-500 bg-blue-50 ring-2 ring-blue-100"
-                            : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm"
-                        }`}
-                      >
-                        <div className="text-2xl">
-                          {item.icon}
-                        </div>
-
-                        <div className="mt-3 text-sm font-bold">
-                          {item.title}
-                        </div>
-
-                        <div className="mt-1 text-xs text-gray-400">
-                          {item.desc}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                {/* AMBULANCE LIST */}
-
-                <section>
-                  <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+                  <div className="mb-5 grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-2">
                     <div>
-                      <div className="text-xl font-bold text-gray-900">
-                        Available near you
-                      </div>
+                      <label className="mb-2 block text-xs font-bold text-gray-700">
+                        Ambulance Type
+                      </label>
 
-                      <div className="mt-1 text-xs text-gray-500">
-                        Showing ambulances that are currently
-                        ON DUTY.
-                      </div>
+                      <select
+                        value={selectedType}
+                        onChange={(e) =>
+                          setSelectedType(e.target.value)
+                        }
+                        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      >
+                        <option value="ALL">
+                          All Types
+                        </option>
+                        <option value="BLS">
+                          BLS - Basic Life Support
+                        </option>
+                        <option value="ALS">
+                          ALS - Advanced Life Support
+                        </option>
+                        <option value="ICU">
+                          ICU - Mobile ICU
+                        </option>
+                        <option value="PATIENT">
+                          Patient Transport
+                        </option>
+                      </select>
                     </div>
 
-                    <div className="text-xs font-bold text-emerald-600">
-                      ● Live availability
+                    <div>
+                      <label className="mb-2 block text-xs font-bold text-gray-700">
+                        Hospital
+                      </label>
+
+                      <select
+                        value={selectedHospital}
+                        onChange={(e) =>
+                          setSelectedHospital(e.target.value)
+                        }
+                        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      >
+                        <option value="ALL">
+                          All Hospitals
+                        </option>
+
+                        {HOSPITALS.map((hospital) => (
+                          <option
+                            key={hospital.id}
+                            value={hospital.name}
+                          >
+                            {hospital.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
-                  {filteredAmbulances.length ===
-                  0 ? (
-                    <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center">
-                      <div className="text-4xl">
-                        🚑
-                      </div>
+                  {filteredAmbulances.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+                      <div className="text-4xl">🚑</div>
 
-                      <div className="mt-3 text-sm font-bold text-gray-700">
+                      <h3 className="mt-3 text-lg font-bold text-gray-900">
                         No ambulance available
-                      </div>
+                      </h3>
 
-                      <div className="mt-1 text-xs text-gray-400">
-                        Try another ambulance type or
+                      <p className="mx-auto mt-1 max-w-md text-sm text-gray-500">
+                        Try selecting another ambulance type or
                         hospital.
-                      </div>
+                      </p>
                     </div>
                   ) : (
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                      {filteredAmbulances.map(
-                        (ambulance) => (
-                          <AmbulanceCard
-                            key={ambulance.id}
-                            ambulance={ambulance}
-                            selected={
-                              selectedAmbulance?.id ===
-                              ambulance.id
-                            }
-                            onSelect={(item) =>
-                              setSelectedAmbulance(
-                                item
-                              )
-                            }
-                            onBook={
-                              handleOpenBooking
-                            }
-                          />
-                        )
-                      )}
+                    <div className="grid gap-5 md:grid-cols-2">
+                      {filteredAmbulances.map((ambulance) => (
+                        <AmbulanceCard
+                          key={ambulance.id}
+                          ambulance={ambulance}
+                          onBook={handleOpenBooking}
+                        />
+                      ))}
                     </div>
                   )}
                 </section>
 
-                {/* HOW IT WORKS */}
-
                 <section>
                   <SectionTitle
-                    eyebrow="Simple process"
-                    title="How Swasth QR Ambulance works"
+                    eyebrow="How it works"
+                    title="Simple ambulance booking flow"
+                    description="Designed for a quick and easy emergency experience."
                   />
 
-                  <div className="grid gap-3 md:grid-cols-4">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {[
-                      [
-                        "01",
-                        "Choose",
-                        "Select the required ambulance type.",
-                        "🔎",
-                      ],
-                      [
-                        "02",
-                        "Book",
-                        "Confirm pickup and patient details.",
-                        "📱",
-                      ],
-                      [
-                        "03",
-                        "Track",
-                        "Watch the ambulance move in real time.",
-                        "📍",
-                      ],
-                      [
-                        "04",
-                        "Arrive",
-                        "Driver reaches the patient and trip starts.",
-                        "🚑",
-                      ],
-                    ].map(
-                      ([
-                        number,
-                        title,
-                        desc,
-                        icon,
-                      ]) => (
-                        <div
-                          key={number}
-                          className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="text-2xl">
-                              {icon}
-                            </div>
+                      {
+                        number: "01",
+                        icon: "🔎",
+                        title: "Find",
+                        text: "Choose ambulance based on type, hospital and availability.",
+                      },
+                      {
+                        number: "02",
+                        icon: "📲",
+                        title: "Book",
+                        text: "Enter emergency details and confirm your request.",
+                      },
+                      {
+                        number: "03",
+                        icon: "🚑",
+                        title: "Track",
+                        text: "Driver accepts the request and starts the trip.",
+                      },
+                      {
+                        number: "04",
+                        icon: "📍",
+                        title: "Arrive",
+                        text: "Track ambulance location and estimated arrival.",
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.number}
+                        className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xl">
+                            {item.icon}
+                          </span>
 
-                            <div className="text-xs font-black text-gray-200">
-                              {number}
-                            </div>
-                          </div>
-
-                          <div className="mt-5 text-sm font-bold">
-                            {title}
-                          </div>
-
-                          <div className="mt-1 text-xs leading-5 text-gray-500">
-                            {desc}
-                          </div>
+                          <span className="text-xs font-black text-gray-300">
+                            {item.number}
+                          </span>
                         </div>
-                      )
-                    )}
+
+                        <h3 className="mt-5 font-bold text-gray-900">
+                          {item.title}
+                        </h3>
+
+                        <p className="mt-2 text-sm leading-6 text-gray-500">
+                          {item.text}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </section>
+              </>
+            ) : (
+              <>
+                <SectionTitle
+                  eyebrow="Your ambulance"
+                  title="Track your booking"
+                  description="You can monitor the complete ambulance journey from booking to arrival."
+                />
 
-                {/* SAFETY */}
-
-                <section className="rounded-3xl border border-emerald-100 bg-emerald-50 p-5 sm:p-6">
-                  <div className="grid gap-5 md:grid-cols-[auto_1fr] md:items-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-3xl shadow-sm">
-                      🛡️
-                    </div>
-
-                    <div>
-                      <div className="text-lg font-bold text-gray-900">
-                        Connected healthcare transport
-                      </div>
-
-                      <div className="mt-1 text-sm leading-6 text-gray-600">
-                        Ambulance, driver and hospital
-                        information stays connected throughout
-                        the trip. The patient can see the vehicle
-                        status and estimated arrival time.
-                      </div>
-                    </div>
-                  </div>
-                </section>
+                <BookingTracker
+                  booking={booking}
+                  ambulance={selectedAmbulance}
+                  tracking={tracking}
+                  onCancel={handleCancel}
+                />
               </>
             )}
           </div>
         )}
 
-        {/* =================================================
-            DRIVER VIEW
-        ================================================= */}
-
+        {/* DRIVER VIEW */}
         {activeView === "driver" && (
-          <DriverDashboard
-            ambulance={currentDriverAmbulance}
-            booking={booking}
-            duty={
-              dutyMap[
-                currentDriverAmbulance.id
-              ] !== undefined
-                ? dutyMap[
-                    currentDriverAmbulance.id
-                  ]
-                : currentDriverAmbulance.duty
-            }
-            setDuty={handleDutyChange}
-            onAccept={handleDriverAccept}
-            onStartTrip={handleStartTrip}
-            onArrive={handleArrive}
-            onComplete={handleComplete}
-          />
+          <div>
+            <SectionTitle
+              eyebrow="Driver module"
+              title="Ambulance Driver Dashboard"
+              description="Manage ambulance duty, booking requests and trip status."
+            />
+
+            <DriverDashboard
+              ambulance={currentDriverAmbulance}
+              booking={booking}
+              duty={
+                currentDriverAmbulance
+                  ? !!dutyMap[currentDriverAmbulance.id]
+                  : false
+              }
+              onAccept={handleDriverAccept}
+              onStartTrip={handleStartTrip}
+              onArrive={handleArrive}
+              onComplete={handleComplete}
+              onDutyChange={(value) =>
+                currentDriverAmbulance &&
+                handleDutyChange(
+                  currentDriverAmbulance.id,
+                  value
+                )
+              }
+            />
+          </div>
         )}
 
-        {/* =================================================
-            ADMIN VIEW
-        ================================================= */}
-
+        {/* ADMIN VIEW */}
         {activeView === "admin" && (
-          <AdminDashboard
-            ambulances={ambulances}
-            booking={booking}
-            selectedAmbulance={
-              selectedAmbulance
-            }
-            dutyMap={dutyMap}
-          />
+          <div>
+            <SectionTitle
+              eyebrow="Admin module"
+              title="Ambulance Fleet Management"
+              description="Monitor availability, active bookings and ambulance fleet."
+            />
+
+            <AdminDashboard
+              ambulances={ambulances}
+              booking={booking}
+              selectedAmbulance={selectedAmbulance}
+              onReset={resetDemo}
+            />
+          </div>
         )}
+
+        {/* MOBILE / DESKTOP VIEW SWITCHER */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+          <span className="mr-2 text-xs font-bold text-gray-500">
+            Demo View:
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setActiveView("patient")}
+            className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
+              activeView === "patient"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            👤 Patient
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveView("driver")}
+            className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
+              activeView === "driver"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            👨‍✈️ Driver
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveView("admin")}
+            className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
+              activeView === "admin"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            🛠️ Admin
+          </button>
+        </div>
       </main>
 
-      {/* ==================================================
-          FOOTER
-      ================================================== */}
-
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="grid gap-7 md:grid-cols-[1.5fr_1fr_1fr]">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-lg text-white">
-                  🚑
-                </div>
-
-                <div className="font-extrabold text-gray-900">
-                  Swasth QR
-                </div>
-              </div>
-
-              <p className="mt-3 max-w-md text-xs leading-5 text-gray-500">
-                Smart healthcare access platform connecting
-                patients, doctors, hospitals and emergency
-                transport services.
-              </p>
-            </div>
-
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                Ambulance
-              </div>
-
-              <div className="mt-3 space-y-2 text-xs text-gray-600">
-                <div>BLS Ambulance</div>
-                <div>ALS Ambulance</div>
-                <div>ICU Ambulance</div>
-                <div>Patient Transport</div>
-              </div>
-            </div>
-
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                System
-              </div>
-
-              <div className="mt-3 space-y-2 text-xs text-gray-600">
-                <div>Live GPS Tracking</div>
-                <div>Driver Management</div>
-                <div>Hospital Network</div>
-                <div>Emergency Dispatch</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-7 flex flex-col justify-between gap-2 border-t border-gray-100 pt-5 text-[11px] text-gray-400 sm:flex-row">
-            <div>
-              © 2026 Swasth QR • Prototype
-            </div>
-
-            <div>
-              Smart Healthcare • Emergency Transport •
-              Live Tracking
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* ==================================================
-          BOOKING MODAL
-      ================================================== */}
-
-      {bookingModal && (
+      {/* BOOKING MODAL */}
+      {bookingModal && selectedAmbulance && (
         <BookingModal
           ambulance={selectedAmbulance}
-          onClose={() =>
-            setBookingModal(false)
-          }
+          onClose={() => {
+            setBookingModal(false);
+            setSelectedAmbulance(null);
+          }}
           onConfirm={handleConfirmBooking}
         />
       )}
